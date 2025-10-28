@@ -4,11 +4,11 @@ import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -86,7 +86,7 @@ export default function LoginScreen() {
                 borderColor: theme.primary 
               }
             ]} 
-            onPress={() => router.push("/(auth)/Login")}
+            onPress={() => router.push("/(auth)/RiderLogin")}
           >
             <Text style={[styles.registerButtonText, { color: theme.primary }]}>
               Become a Rider
