@@ -1,6 +1,12 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "jsx": "react-native",
+    "esModuleInterop": true,
+
+    "allowJs": true,
+
+    "allowSyntheticDefaultImports": true,
     "strict": true,
     "paths": {
       "@/*": [
@@ -8,10 +14,12 @@
       ]
     }
   },
+  
   "include": [
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-  ]
+, "app/(rider)/secondDeliveryHistorytsx"  ]
 }
+
