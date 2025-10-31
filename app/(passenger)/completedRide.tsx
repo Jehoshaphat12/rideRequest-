@@ -128,14 +128,14 @@ export default function RideCompletedScreen() {
 
       if (Platform.OS === "web") {
         alert("Thank You! Your rating has been submitted successfully");
-        router.replace("/(passenger)/passengerScreen");
+        router.replace("/(passenger)/rideRequest");
         return;
       }
 
       Alert.alert(
         "Thank You!", 
         "Your rating has been submitted successfully.",
-        [{ text: "OK", onPress: () => router.replace("/(passenger)/passengerScreen") }]
+        [{ text: "OK", onPress: () => router.replace("/(passenger)/rideRequest") }]
       );
 
     } catch (error) {
@@ -394,7 +394,7 @@ export default function RideCompletedScreen() {
 
           <TouchableOpacity
             style={[styles.skipButton, { borderColor: theme.border }]}
-            onPress={() => router.replace("/(passenger)/passengerScreen")}
+            onPress={() => router.replace("/(passenger)/rideRequest")}
             disabled={submitting}
           >
             <Text style={[styles.skipText, { color: theme.muted }]}>
@@ -407,7 +407,7 @@ export default function RideCompletedScreen() {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: theme.primary }]}
-            onPress={() => router.replace("/(passenger)/passengerScreen")}
+            onPress={() => router.replace("/(passenger)/rideRequest")}
           >
             <Ionicons name="home-outline" size={20} color="#fff" />
             <Text style={styles.primaryButtonText}>Back to Home</Text>

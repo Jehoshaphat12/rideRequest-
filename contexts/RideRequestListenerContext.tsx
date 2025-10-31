@@ -1,60 +1,124 @@
-// /contexts/RideRequestListenerContext.tsx
-import { db } from "@/lib/firebaseConfig";
-import { useNavigation } from "@react-navigation/native";
-import { Audio } from "expo-av";
-import { doc, onSnapshot } from "firebase/firestore";
-import React, { createContext, useContext, useEffect, useState } from "react";
+// contexts/RideRequestListenerContext.tsx
+import { db } from '@/lib/firebaseConfig';
+import { useRouter } from 'expo-router';
+import { collection, doc, getDoc, onSnapshot, query, where } from 'firebase/firestore';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
-type RideRequest = any;
-
-interface RideRequestListenerContextType {
-  incomingRequest: RideRequest | null;
-  setIncomingRequest: React.Dispatch<React.SetStateAction<RideRequest | null>>;
+interface RideRequest {
+  id: string;
+  riderId: string;
+  passengerId: string;
+  passengerPhoto: string;
+  passengerName: string;
+  pickupAddress: string;
+  destinationAddress: string;
+  estimatedFare?: number;
+  estimatedDuration?: string;
+  estimatedDistance?: string;
 }
 
-const RideRequestListenerContext = createContext<RideRequestListenerContextType | null>(null);
+interface RideRequestListenerContextType {
+  isListening: boolean;
+  currentRequests: RideRequest | null;
+}
 
-export const RideRequestListenerProvider: React.FC<{ children: React.ReactNode; riderId?: string }> = ({ children, riderId }) => {
-  const [incomingRequest, setIncomingRequest] = useState<RideRequest | null>(null);
-  const navigation = useNavigation();
+const RideRequestListenerContext = createContext<RideRequestListenerContextType>({
+  isListening: false,
+  currentRequests: null,
+});
+
+export const useRideRequestListener = () => useContext(RideRequestListenerContext);
+
+export const RideRequestListenerProvider: React.FC<{
+  children: React.ReactNode;
+  riderId: string | null;
+}> = ({ children, riderId }) => {
+  const router = useRouter();
+  const [isListening, setIsListening] = useState(false);
+  const [currentRequests, setCurrentRequests] = useState<RideRequest | null>(null);
 
   useEffect(() => {
-    if (!riderId) return;
-    const unsubscribe = onSnapshot(
-      doc(db, "rideRequests", riderId),
-      async (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data?.status === "pending") {
-            setIncomingRequest(data);
+    if (!riderId) {
+      setIsListening(false);
+      return;
+    }
 
-            // Play ringtone
-            const { sound } = await Audio.Sound.createAsync(
-              require("@/assets/sounds/incoming_call.mp3")
-            );
-            await sound.playAsync();
-
-            // Show call screen
-            (navigation as any).navigate("IncomingCallScreen", { request: data });
-          }
-        }
-      }
+    console.log('🚗 Starting ride call listener for rider:', riderId);
+    
+    const rideQuery = query(
+      collection(db, 'rides'),
+      where('status', '==', 'pending'),
+      where('riderId', '==', riderId) // Make sure your rides have this field
     );
 
-    return () => unsubscribe();
-  }, [riderId]);
+    const unsubscribe = onSnapshot(rideQuery, async (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === 'added') {
+          const rideData = change.doc.data();
+          const rideId = change.doc.id;
+          
+          console.log('📞 New ride request received:', rideId);
+          
+          // Get passenger details
+          try {
+            const passengerDoc = await getDoc(doc(db, 'users', rideData.passengerId));
+            const passengerData = passengerDoc.data();
+            
+            const rideRequest: RideRequest = {
+              id: rideId,
+              riderId: riderId,
+              passengerId: rideData.passengerId,
+              passengerPhoto: passengerData?.profilePicture || '',
+              passengerName: passengerData?.userName || 'Passenger',
+              pickupAddress: rideData.pickup?.address || 'Pickup location',
+              destinationAddress: rideData.dropoff?.address || 'Destination',
+              estimatedFare: rideData.estimatedFare,
+              estimatedDuration: rideData.estimatedDuration,
+              estimatedDistance: rideData.estimatedDistance,
+            };
+
+            console.log('🎯 Navigating to incoming call with:', rideRequest);
+
+            setCurrentRequests(rideRequest);
+            
+            // Navigate to incoming call modal
+            router.push({
+              pathname: "/(rider)/incomingCallScreen",
+              params: {
+                id: rideRequest.id,
+                riderId: rideRequest.riderId,
+                passengerPhoto: rideRequest.passengerPhoto,
+                passengerName: rideRequest.passengerName,
+                pickupAddress: rideRequest.pickupAddress,
+                destinationAddress: rideRequest.destinationAddress,
+                estimatedFare: rideRequest.estimatedFare?.toString() || '',
+                estimatedDuration: rideRequest.estimatedDuration || '',
+                estimatedDistance: rideRequest.estimatedDistance || '',
+              }
+            });
+            
+          } catch (error) {
+            console.error('Error fetching passenger details:', error);
+          }
+        }
+      });
+    }, (error) => {
+      console.error("Error listening to ride requests: "), error
+    });
+
+    setIsListening(true);
+
+    return () => {
+      console.log('🚗 Stopping ride call listener');
+      unsubscribe();
+      setIsListening(false);
+      setCurrentRequests(null);
+    };
+  }, [riderId, router]);
 
   return (
-    <RideRequestListenerContext.Provider value={{ incomingRequest, setIncomingRequest }}>
+    <RideRequestListenerContext.Provider value={{ isListening, currentRequests }}>
       {children}
     </RideRequestListenerContext.Provider>
   );
-};
-
-export const useRideRequestListener = () => {
-  const context = useContext(RideRequestListenerContext);
-  if (!context) {
-    throw new Error("useRideRequestListener must be used within RideRequestListenerProvider");
-  }
-  return context;
 };

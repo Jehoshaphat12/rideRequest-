@@ -7,13 +7,13 @@ import { useRouter } from "expo-router";
 import { signOut } from "firebase/auth";
 import { useEffect, useState } from "react";
 import {
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Switch,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 export default function PassengerProfileScreen() {
@@ -164,7 +164,7 @@ export default function PassengerProfileScreen() {
             icon="card-outline"
             label="Payment Methods"
             theme={theme}
-            onPress={() => router.push("/(passenger)/passengerScreen")}
+            onPress={() => router.push("/(passenger)/rideRequest")}
           />
           <OptionRow
             icon="help-circle-outline"

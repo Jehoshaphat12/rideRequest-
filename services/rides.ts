@@ -1,4 +1,6 @@
 import { auth, db } from "@/lib/firebaseConfig";
+import admin from "firebase-admin";
+import * as functions from "firebase-functions";
 import {
   addDoc,
   collection,
@@ -7,6 +9,9 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
+import { sendPushNotification } from "./sendPushNotification";
+
+admin.initializeApp();
 
 type LocationPoint = {
   lat: number;
@@ -108,7 +113,7 @@ export async function acceptRide(rideId: string) {
       status: "accepted",
       riderId: user.uid,
       riderInfo: {
-        name: riderData?.name || "Rider",
+        userName: riderData?.userName || "Rider",
         profilePicture: riderData?.profilePicture || null,
         phone: riderData?.phone || null,
         rating: riderData?.rating || 0,
@@ -220,3 +225,26 @@ export async function cancelRide(rideId: string, cancelledBy: string, reason?: s
     throw new Error("Failed to cancel ride.");
   }
 }
+
+
+
+export const notifyRidersOnNewRequest = functions.firestore
+  .document("rides/{rideId}")
+  .onCreate(async (snap) => {
+    const ride = snap.data();
+    if (!ride) return;
+
+    const ridersSnap = await admin.firestore().collection("users").where("role", "==", "rider").get();
+
+    for (const doc of ridersSnap.docs) {
+      const rider = doc.data();
+      if (rider.expoPushToken) {
+        await sendPushNotification(
+          rider.expoPushToken,
+          "🚖 New Ride Request",
+          "A passenger nearby needs a ride!",
+          { rideId: snap.id }
+        );
+      }
+    }
+  });

@@ -1,6 +1,8 @@
-import { auth } from "@/lib/firebaseConfig";
+import { auth, db } from "@/lib/firebaseConfig";
+import { doc, setDoc } from "@firebase/firestore";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
+import fetch from "node-fetch";
 import { Platform } from "react-native";
 import Toast from "react-native-toast-message";
 import { addNotification } from "./notifications";
@@ -21,6 +23,7 @@ Notifications.setNotificationHandler({
 
 // Ask permission + prepare channel (Android needs a channel)
 export async function registerNotificationPermissions() {
+  let token;
   if (!Device.isDevice) {
     alert("Must use physical device for Notifications");
     return;
@@ -41,6 +44,8 @@ export async function registerNotificationPermissions() {
     return;
   }
 
+  token = (await Notifications.getExpoPushTokenAsync()).data;
+
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("default", {
       name: "default",
@@ -49,6 +54,35 @@ export async function registerNotificationPermissions() {
       lightColor: "#FF231F7C",
     });
   }
+
+  // Save token to Firestore
+  const user = auth.currentUser;
+  if (user) {
+    await setDoc(doc(db, "users", user.uid), { expoPushToken: token }, { merge: true });
+  }
+
+  return token;
+
+}
+
+export async function sendPushNotification(expoPushToken: any, title: any, body: any, data: any) {
+  const message = {
+    to: expoPushToken,
+    sound: "default",
+    title,
+    body,
+    data,
+  };
+
+  await fetch("https://exp.host/--/api/v2/push/send", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Accept-encoding": "gzip, deflate",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
 }
 
 export async function showNotification(title: string, body: string) {

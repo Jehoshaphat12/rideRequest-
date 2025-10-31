@@ -301,7 +301,7 @@ export default function PassengerHomeScreen() {
                 />
                 <Text style={[styles.questionText, { color: theme.text }]}>
                   {destination?.address
-                    ? "Your destination"
+                    ? "Your Trip Details"
                     : "Where would you like to go?"}
                 </Text>
               </View>

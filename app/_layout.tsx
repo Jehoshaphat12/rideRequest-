@@ -16,12 +16,16 @@ function RootLayoutContent() {
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [initialAuthCheck, setInitialAuthCheck] = useState(false);
+  const [showSplash, setShowSplash] = useState(true); // 🆕 Splash screen state
+  const hasHiddenSplash = useRef(false);
 
   const [riderId, setRiderId] = useState<string | null>(null);
 
   // Use a ref to track the current navigation "ticket"
   const navigationTicketRef = useRef(0);
   const authListenerInitialized = useRef(false);
+
+  
 
   const checkProfileAndNavigate = async (
     user: any,
@@ -130,6 +134,34 @@ function RootLayoutContent() {
       authListenerInitialized.current = false;
     };
   }, []);
+
+  useEffect(() => {
+  const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+    const rideId = response.notification.request.content.data.rideId;
+    if (rideId) {
+      router.push({
+        pathname: "/(rider)/incomingCallScreen",
+        params: { id: rideId }
+      });
+    }
+  });
+
+  return () => subscription.remove();
+}, []);
+
+  // 🆕 Minimum splash screen duration
+//   useEffect(() => {
+//   if (hasHiddenSplash.current) return;
+//   const splashTimer = setTimeout(() => {
+//     setShowSplash(false);
+//     hasHiddenSplash.current = true;
+//   }, 3000);
+//   return () => clearTimeout(splashTimer);
+// }, []);
+
+//   if (showSplash) {
+//     return <SplashScreen />;
+//   }
 
   if (checkingAuth && !initialAuthCheck) {
     return <Loader msg="Loading..." />;

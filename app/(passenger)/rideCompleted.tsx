@@ -8,16 +8,16 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  Platform,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    Platform,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 interface Ride {
@@ -161,7 +161,7 @@ export default function RideCompletedScreen() {
       Alert.alert(
         "Thank You!", 
         "Your rating has been submitted successfully.",
-        [{ text: "OK", onPress: () => router.replace("/(passenger)/passengerScreen") }]
+        [{ text: "OK", onPress: () => router.replace("/(passenger)/rideRequest") }]
       );
 
     } catch (error) {

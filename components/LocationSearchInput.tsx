@@ -226,7 +226,7 @@ export default function LocationSearchInput({
         {isGettingLocation ? (
           <ActivityIndicator size="small" color={iconColor} style={styles.icon} />
         ) : (
-          <Ionicons name={iconName} size={20} color={iconColor} style={styles.icon} />
+          <Ionicons name={iconName as any} size={20} color={iconColor} style={styles.icon} />
         )}
         
         <TextInput

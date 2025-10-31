@@ -8,8 +8,7 @@ import {
   doc,
   onSnapshot,
   query,
-  updateDoc,
-  where,
+  where
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
@@ -47,10 +46,11 @@ export default function IncomingRideScreen() {
     if (!auth.currentUser) return;
     try {
       const rideRef = doc(db, "rides", rideId);
-      await updateDoc(rideRef, {
-        status: "accepted",
-        riderId: auth.currentUser.uid,
-      });
+      // await updateDoc(rideRef, {
+      //   status: "accepted",
+      //   riderId: auth.currentUser.uid,
+      // });
+      await acceptRide(rideId);
       
       // Navigate to ride progress screen after accepting
       router.push({
