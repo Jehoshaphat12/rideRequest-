@@ -53,7 +53,7 @@
 //       let targetRoute = '/';
 //       if (user && role) {
 //         targetRoute = role === 'passenger' 
-//           ? '/(passenger)/passengerScreen' 
+//           ? '/(passenger)/rideRequest' 
 //           : '/(rider)/riderHome';
 //       }
 

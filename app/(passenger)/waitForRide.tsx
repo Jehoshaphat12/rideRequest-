@@ -108,7 +108,7 @@ export default function WaitForRide() {
           // If ride is completed or cancelled, navigate back after a delay
           if (data.status === "completed" || data.status === "cancelled") {
             setTimeout(() => {
-              router.replace("/(passenger)/passengerScreen");
+              router.replace("/(passenger)/rideRequest");
             }, 3000);
           }
         } else {

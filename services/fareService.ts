@@ -47,9 +47,9 @@ export interface DeliveryFareRate extends FareRate {
 
 // Default fare rates (in GHS)
 const DEFAULT_FARE_RATES: FareRate = {
-  baseFare: 3.00,
+  baseFare: 2.00,
   perKm: 5.00,
-  perMinute: 0.10,
+  perMinute: 0.05,
   minimumFare: 5,
   currency: 'GHS'
 };

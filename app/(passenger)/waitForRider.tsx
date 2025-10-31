@@ -41,7 +41,7 @@ export default function waitForRide({ rideId }: { rideId: string }) {
 
   const cancelRide = async () => {
     await updateDoc(doc(db, "rides", rideId), { status: "cancelled" });
-    router.replace("/passengerScreen");
+    router.replace("/rideRequest");
   };
 
   return (

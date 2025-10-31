@@ -1,4 +1,5 @@
 import MapViewComponent from "@/components/MapViewComponent";
+import { useRideRequestListener } from "@/contexts/RideRequestListenerContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
@@ -68,26 +69,129 @@ export default function RiderHomeScreen() {
   const [cardsVisible, setCardsVisible] = useState(true);
   const [controlsMinimized, setControlsMinimized] = useState(false);
   const { currentLocation } = useLocationTracking();
+  const [shownRequests, setShownRequests] = useState<Set<string>>(new Set());
+  const { isListening, currentRequests } = useRideRequestListener();
 
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
-  // 🧭 Make the config stable with useRef
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 70,
-  }).current;
+  const rideListenerRef = useRef<(() => void) | null>(null);
 
-  // 🧠 Stable callback — React won’t re-create it on every render
-  const onViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems && viewableItems.length > 0) {
-      const index = viewableItems[0].index;
-      if (index !== null && index !== undefined) {
-        setCurrentIndex(index);
+  // Add this to your RiderHomeScreen for testing
+  // const testIncomingCall = () => {
+  //   console.log("🧪 Testing incoming call...");
+  //   router.push({
+  //     pathname: "/(rider)/incomingCallScreen",
+  //     params: {
+  //       id: "test-ride-123",
+  //       riderId: auth.currentUser?.uid || "test-rider",
+  //       passengerPhoto: "https://via.placeholder.com/100",
+  //       passengerName: "Test Passenger",
+  //       pickupAddress: "123 Test Street, Test City",
+  //       destinationAddress: "456 Destination Ave, Test City",
+  //       estimatedFare: "15.50",
+  //       estimatedDuration: "15 mins",
+  //       estimatedDistance: "3.2 km",
+  //     },
+  //   });
+  // };
+
+  useEffect(() => {
+    if (status !== "online" || filteredRequests.length === 0) return;
+
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+
+    const requestsFromLast10Mins = filteredRequests.filter((req) => {
+      if (!req.createdAt || shownRequests.has(req.id)) return false;
+
+      try {
+        const createdAt = req.createdAt?.toDate
+          ? req.createdAt.toDate()
+          : new Date(req.createdAt.seconds * 1000);
+        return createdAt >= tenMinutesAgo;
+      } catch (error) {
+        console.error("Error parsing createdAt:", error);
+        return false;
+      }
+    });
+
+    if (requestsFromLast10Mins.length > 0) {
+      const currentRequest = requestsFromLast10Mins[0];
+
+      if (currentRequest && currentRequest.pickup && currentRequest.dropoff) {
+        console.log(
+          "📞 Showing incoming call for new request:",
+          currentRequest.id
+        );
+
+        // 🆕 Mark this request as shown
+        setShownRequests((prev) => new Set(prev).add(currentRequest.id));
+
+        router.push({
+          pathname: "/(rider)/incomingCallScreen",
+          params: {
+            id: currentRequest.id,
+            riderId: auth.currentUser?.uid,
+            passengerPhoto: "https://via.placeholder.com/100",
+            passengerName: "Passenger",
+            passengerId: currentRequest.passengerId,
+            pickupAddress: currentRequest.pickup.address || "Pickup location",
+            destinationAddress: currentRequest.dropoff.address || "Destination",
+            estimatedFare: currentRequest.estimatedFare?.toString() || "0",
+            estimatedDuration:
+              currentRequest.estimatedDuration || "Calculating...",
+            estimatedDistance:
+              currentRequest.estimatedDistance || "Calculating...",
+            requestType: currentRequest.type,
+          },
+        });
       }
     }
-  }).current;
+  }, [filteredRequests, status, shownRequests, router]);
+
+  // Clean up shownRequests every minute to prevent memory issues
+  // 🆕 Reset shownRequests more frequently
+  useEffect(() => {
+    const interval = setInterval(() => {
+      console.log("🔄 Refreshing shownRequests...");
+      setShownRequests((prev) => {
+        const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+        const newSet = new Set();
+
+        // Only keep requests that are still recent
+        filteredRequests.forEach((req) => {
+          if (req.createdAt) {
+            try {
+              const createdAt = req.createdAt?.toDate
+                ? req.createdAt.toDate()
+                : new Date(req.createdAt.seconds * 1000);
+              if (createdAt >= fiveMinutesAgo && prev.has(req.id)) {
+                newSet.add(req.id);
+              }
+            } catch (error) {
+              console.error("Error cleaning shown requests:", error);
+            }
+          }
+        });
+
+        console.log(
+          `🔄 shownRequests refreshed: ${prev.size} -> ${newSet.size}`
+        );
+        return newSet;
+      });
+    }, 30000); // Clean every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [filteredRequests]);
+
+  // 🆕 Reset when going offline
+  useEffect(() => {
+    if (status === "offline") {
+      setShownRequests(new Set());
+    }
+  }, [status]);
 
   // Filter requests based on location and service type
   useEffect(() => {
@@ -113,15 +217,37 @@ export default function RiderHomeScreen() {
         return isNearby && serviceMatch;
       });
 
-      setFilteredRequests(nearbyRequests);
+      // 🆕 Sort by most recent and take only the latest
+      // const sortedByRecent = nearbyRequests.sort((a, b) => {
+      //   const timeA = a.createdAt?.toDate?.()
+      //     ? a.createdAt.toDate().getTime()
+      //     : 0;
+      //   const timeB = b.createdAt?.toDate?.()
+      //     ? b.createdAt.toDate().getTime()
+      //     : 0;
+      //   return timeB - timeA; // Most recent first
+      // });
 
-      if (nearbyRequests.length > 0) {
-        setCurrentIndex(1);
-      } else {
-        setCurrentIndex(0);
-      }
+      // // 🆕 Take only the latest request
+      // const latestRequestOnly = sortedByRecent.slice(0, 1);
+
+      const latestRequestOnly = [...nearbyRequests]
+        .sort((a, b) => {
+          const dateA = a.createdAt?.toDate
+            ? a.createdAt.toDate()
+            : new Date(a.createdAt?.seconds * 1000 || 0);
+          const dateB = b.createdAt?.toDate
+            ? b.createdAt.toDate()
+            : new Date(b.createdAt?.seconds * 1000 || 0);
+
+          return dateB.getTime() - dateA.getTime();
+        })
+        .slice(0, 1);
+
+      setFilteredRequests(latestRequestOnly);
+      setCurrentIndex(0);
     } else {
-      setFilteredRequests(serviceRequests);
+      setFilteredRequests([]);
     }
   }, [serviceRequests, location, activeService]);
 
@@ -196,7 +322,7 @@ export default function RiderHomeScreen() {
       const rideQuery = query(
         collection(db, "rides"),
         where("status", "==", "pending"),
-        limit(20)
+        limit(10)
       );
 
       rideUnsubscribe = onSnapshot(
@@ -396,39 +522,39 @@ export default function RiderHomeScreen() {
     }
   };
 
-  // Carousel navigation
-  const goToNextRequest = () => {
-    if (currentIndex < filteredRequests.length) {
-      const nextIndex = currentIndex + 1;
-      setCurrentIndex(nextIndex);
-      flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
-    }
-  };
+  // // Carousel navigation
+  // const goToNextRequest = () => {
+  //   if (currentIndex < filteredRequests.length) {
+  //     const nextIndex = currentIndex + 1;
+  //     setCurrentIndex(nextIndex);
+  //     flatListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
+  //   }
+  // };
 
-  const goToPrevRequest = () => {
-    if (currentIndex > 0) {
-      const prevIndex = currentIndex - 1;
-      setCurrentIndex(prevIndex);
-      flatListRef.current?.scrollToIndex({ index: prevIndex, animated: true });
-    }
-  };
+  // const goToPrevRequest = () => {
+  //   if (currentIndex > 0) {
+  //     const prevIndex = currentIndex - 1;
+  //     setCurrentIndex(prevIndex);
+  //     flatListRef.current?.scrollToIndex({ index: prevIndex, animated: true });
+  //   }
+  // };
 
-  const onScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    { useNativeDriver: false }
-  );
+  // const onScroll = Animated.event(
+  //   [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+  //   { useNativeDriver: false }
+  // );
 
-  const onMomentumScrollEnd = (event: any) => {
-    const contentOffset = event.nativeEvent.contentOffset;
-    const viewSize = event.nativeEvent.layoutMeasurement;
-    const newIndex = Math.floor(contentOffset.x / viewSize.width);
-    setCurrentIndex(newIndex);
-  };
+  // const onMomentumScrollEnd = (event: any) => {
+  //   const contentOffset = event.nativeEvent.contentOffset;
+  //   const viewSize = event.nativeEvent.layoutMeasurement;
+  //   const newIndex = Math.floor(contentOffset.x / viewSize.width);
+  //   setCurrentIndex(newIndex);
+  // };
 
   // Get map locations based on current request
   const getMapLocations = () => {
-    if (filteredRequests.length > 0 && currentIndex < filteredRequests.length) {
-      const currentRequest = filteredRequests[currentIndex];
+    if (filteredRequests.length > 0) {
+      const currentRequest = filteredRequests[0];
       return {
         pickupLocation: {
           latitude: currentRequest.pickup?.lat || 0,
@@ -850,7 +976,6 @@ export default function RiderHomeScreen() {
         barStyle={darkMode ? "light-content" : "dark-content"}
         backgroundColor={theme.background}
       />
-
       {/* Header Bar */}
       <View style={[styles.headerBar, { backgroundColor: theme.card }]}>
         <View style={styles.headerLeft}>
@@ -895,7 +1020,6 @@ export default function RiderHomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
-
       {/* Map - Takes full screen */}
       <View style={styles.mapContainer}>
         {!location || !mounted ? (
@@ -909,7 +1033,6 @@ export default function RiderHomeScreen() {
           />
         )}
       </View>
-
       {/* NEW: Status Panel from first code */}
       <View style={[styles.statusPanel, { backgroundColor: theme.card }]}>
         <ServiceToggle />
@@ -946,132 +1069,27 @@ export default function RiderHomeScreen() {
           )}
         </TouchableOpacity>
       </View>
-
-      {/* Floating Service Requests Cards */}
+      {/* Show Only Latest Request (Single Card) */}
       {status === "online" && filteredRequests.length > 0 && (
-        <>
-          {/* Peek Indicator (when cards are hidden) */}
-          {!cardsVisible && (
-            <TouchableOpacity
-              style={[styles.peekIndicator, { backgroundColor: theme.primary }]}
-              onPress={() => setCardsVisible(true)}
-            >
-              <Text style={[styles.peekText, { color: theme.primaryText }]}>
-                👆 {filteredRequests.length}{" "}
-                {filteredRequests.length > 1 ? "requests" : "request"} available
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Cards Container (when cards are visible) */}
-          {cardsVisible && (
-            <View
-              style={[
-                styles.floatingCardsContainer,
-                { backgroundColor: theme.card },
-              ]}
-            >
-              {/* Hide Button */}
-              <TouchableOpacity
-                style={styles.hideButton}
-                onPress={() => setCardsVisible(false)}
-              >
-                <Ionicons name="chevron-down" size={24} color={theme.primary} />
-              </TouchableOpacity>
-
-              {/* Carousel Navigation */}
-              {filteredRequests.length > 1 && (
-                <View style={styles.carouselNav}>
-                  <TouchableOpacity
-                    style={[
-                      styles.navButton,
-                      { backgroundColor: theme.primary },
-                      currentIndex === 0 && styles.navButtonDisabled,
-                    ]}
-                    onPress={goToPrevRequest}
-                    disabled={currentIndex === 0}
-                  >
-                    <Ionicons
-                      name="chevron-back"
-                      size={20}
-                      color={
-                        currentIndex === 0 ? theme.muted : theme.primaryText
-                      }
-                    />
-                  </TouchableOpacity>
-
-                  <Text style={[styles.carouselCounter, { color: theme.text }]}>
-                    {currentIndex + 1} / {filteredRequests.length}
-                  </Text>
-
-                  <TouchableOpacity
-                    style={[
-                      styles.navButton,
-                      { backgroundColor: theme.primary },
-                      currentIndex === filteredRequests.length - 1 &&
-                        styles.navButtonDisabled,
-                    ]}
-                    onPress={goToNextRequest}
-                    disabled={currentIndex === filteredRequests.length - 1}
-                  >
-                    <Ionicons
-                      name="chevron-forward"
-                      size={20}
-                      color={
-                        currentIndex === filteredRequests.length - 1
-                          ? theme.muted
-                          : theme.primaryText
-                      }
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-
-              {/* Service Cards Carousel */}
-              <Animated.FlatList
-                ref={flatListRef}
-                data={filteredRequests}
-                renderItem={renderServiceCard}
-                keyExtractor={(item) => item.id}
-                horizontal
-                pagingEnabled
-                showsHorizontalScrollIndicator={false}
-                onScroll={onScroll}
-                onMomentumScrollEnd={onMomentumScrollEnd}
-                onViewableItemsChanged={onViewableItemsChanged}
-                viewabilityConfig={viewabilityConfig}
-                scrollEventThrottle={16}
-                snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
-                decelerationRate="fast"
-                snapToAlignment="center"
-                contentContainerStyle={styles.carouselContent}
-                // snapToInterval={Dimensions.get("window").width} // ensures each card fully snaps
-              />
-
-              {/* Dots Indicator */}
-              {filteredRequests.length > 1 && (
-                <View style={styles.dotsContainer}>
-                  {filteredRequests.map((_, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.dot,
-                        {
-                          backgroundColor:
-                            index === currentIndex
-                              ? theme.primary
-                              : theme.border,
-                        },
-                      ]}
-                    />
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
-        </>
+        <View
+          style={[
+            styles.singleRequestContainer,
+            { backgroundColor: theme.card },
+          ]}
+        >
+          {/* Show the most recent request (first in array) */}
+          {renderServiceCard({ item: filteredRequests[0], index: 0 })}
+        </View>
       )}
-
+      {/* Add a test button to your RiderHomeScreen (temporarily): */}
+      {/* <TouchableOpacity
+        style={[styles.testButton, { backgroundColor: theme.primary }]}
+        onPress={testIncomingCall}
+      >
+        <Text style={[styles.testButtonText, { color: theme.primaryText }]}>
+          Test Incoming Call
+        </Text>
+      </TouchableOpacity> */}
       {/* No Requests Available Messages */}
       {status === "online" &&
         filteredRequests.length === 0 &&
@@ -1089,7 +1107,6 @@ export default function RiderHomeScreen() {
             </Text>
           </View>
         )}
-
       {status === "online" && serviceRequests.length === 0 && (
         <View
           style={[styles.noRidesContainer, { backgroundColor: theme.card }]}
@@ -1122,7 +1139,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "ios" ? 50 : 30,
+    paddingTop: Platform.OS === "ios" ? 50 : 40,
     paddingBottom: 12,
     ...Platform.select({
       ios: {
@@ -1520,5 +1537,39 @@ const styles = StyleSheet.create({
   cardScrollView: {
     maxHeight: 300,
     marginBottom: 8,
+  },
+
+  // Add to your styles
+  testButton: {
+    position: "absolute",
+    top: 200,
+    alignSelf: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  testButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+
+  singleRequestContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 20,
+    right: 20,
+    maxHeight: 400,
+    borderRadius: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
 });

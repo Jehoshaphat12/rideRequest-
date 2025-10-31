@@ -9,17 +9,17 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 
 interface LocationSearchInputProps {
   placeholder: string;
   iconName: string;
   iconColor: string;
-  showDropdown?: boolean; // ✅ new prop to control dropdown visibility
+  showDropdown?: boolean;
   value?: string;
   onLocationSelect: (location: { lat: number; lng: number; address: string }) => void;
-  onPredictionsChange?: (predictions: any[]) => void; // ✅ new optional prop
+  onPredictionsChange?: (predictions: any[]) => void;
   isPickup?: boolean;
   autoFillCurrentLocation?: boolean;
 }
@@ -45,52 +45,151 @@ export default function LocationSearchInputs({
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | any>();
   const hasAutoFilled = useRef(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
-   // Keep internal query in sync when parent passes a new `value`
   useEffect(() => {
     if (typeof value === 'string' && value !== query) {
       setQuery(value);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-   useEffect(() => {
+  useEffect(() => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
   }, []);
 
-  // --- Auto-fill current location (pickup only) ---
-  useEffect(() => {
-    if (isPickup && autoFillCurrentLocation && currentLocation && !hasAutoFilled.current) {
-      hasAutoFilled.current = true;
-      handleSelectLocation({
-        lat: currentLocation.latitude,
-        lng: currentLocation.longitude,
-        address: 'Current Location',
-      });
-    }
-  }, [currentLocation]);
+  // useEffect(() => {
+  //   if (isPickup && autoFillCurrentLocation && currentLocation && !hasAutoFilled.current) {
+  //     hasAutoFilled.current = true;
+  //     handleSelectLocation({
+  //       lat: currentLocation.latitude,
+  //       lng: currentLocation.longitude,
+  //       address: 'Current Location',
+  //     });
+  //   }
+  // }, [currentLocation]);
 
-  // --- Fetch autocomplete predictions ---
+
+  const getReadableLocationName = async (lat: any, lng:any) => {
+  try {
+    // 1. First try Places API for nearby businesses/landmarks
+    const placesResponse = await fetch(
+      `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${lat},${lng}&radius=100&key=${GOOGLE_MAPS_API_KEY}`
+    );
+    const placesData = await placesResponse.json();
+    
+    if (placesData.status === 'OK' && placesData.results.length > 0) {
+      const closestPlace = placesData.results[0];
+      return `${closestPlace.name}`; // Returns "Starbucks", "Mall", etc.
+    }
+    
+    // 2. Fallback to reverse geocoding
+    return await getBestAddressFromGeocoding(lat, lng);
+    
+  } catch (error) {
+    console.error('Location name error:', error);
+    return await getBestAddressFromGeocoding(lat, lng);
+  }
+};
+
+const getBestAddressFromGeocoding = async (lat: any, lng: any) => {
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_MAPS_API_KEY}`
+  );
+  const data = await response.json();
+  
+  if (data.status === 'OK' && data.results.length > 0) {
+    // Filter out plus codes
+    const bestResult = data.results.find((result: any) => 
+      !result.types.includes('plus_code') &&
+      !result.formatted_address.includes('+')
+    );
+    
+    if (bestResult) {
+      return bestResult.formatted_address;
+    }
+  }
+  
+  // Final fallback
+  return `Location near ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+};
+
+// Your button handler - simplified using existing currentLocation
+const handleUseCurrentLocation = async () => {
+  if (!currentLocation) {
+    alert('Location not available yet. Please wait or enable location services.');
+    return;
+  }
+
+  setIsLoadingLocation(true);
+  
+  try {
+    const address = await getReadableLocationName(
+      currentLocation.latitude, 
+      currentLocation.longitude
+    );
+
+    const testAddress = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
+    
+    console.log('Testing with coordinates address:', testAddress);
+    
+    // handleSelectLocation({
+    //   lat: currentLocation.latitude,
+    //   lng: currentLocation.longitude,
+    //   address: testAddress, // Use simple coordinates first
+    // });
+    
+    onLocationSelect({
+      lat: currentLocation.latitude,
+      lng: currentLocation.longitude,
+      address: address,
+    });
+
+    // Also update the query TextInput
+    setQuery(address);
+    
+  } catch (error) {
+    console.error('Location error:', error);
+    alert('Unable to get your location details');
+  } finally {
+    setIsLoadingLocation(false);
+  }
+};
+
+  // 🆕 UPDATED: Fetch predictions with location biasing
   const fetchPredictions = async (text: string) => {
     if (text.length < 3) {
       setPredictions([]);
       setShowResults(false);
-      onPredictionsChange?.([]); // ✅ inform parent
+      onPredictionsChange?.([]);
       return;
     }
 
     try {
-      const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-          text
-        )}&key=${GOOGLE_MAPS_API_KEY}`
-      );
+      // Build parameters with location biasing
+      const params = new URLSearchParams({
+        input: text,
+        key: GOOGLE_MAPS_API_KEY || '',
+        // types: 'geocode,establishment,cities,regions', // Focus on geographic locations
+      });
+
+      // Add location biasing if we have user's location
+      if (currentLocation) {
+        const { latitude, longitude } = currentLocation;
+        params.append('location', `${latitude},${longitude}`);
+        params.append('radius', '20000'); // 20km radius
+        // params.append('strictbounds', 'true'); // Only show results within radius
+      }
+
+      const apiUrl = `https://maps.googleapis.com/maps/api/place/autocomplete/json?${params}`;
+
+      const res = await fetch(apiUrl);
       const data = await res.json();
+      
       if (data?.predictions) {
         setPredictions(data.predictions);
-        onPredictionsChange?.(data.predictions); // ✅ emit predictions to parent
+        onPredictionsChange?.(data.predictions);
       } else {
         setPredictions([]);
         onPredictionsChange?.([]);
@@ -134,7 +233,6 @@ export default function LocationSearchInputs({
 
   return (
     <View>
-      {/* --- Input Row --- */}
       <View style={[styles.inputContainer, { backgroundColor: theme.border }]}>
         <Ionicons name={iconName as any} size={22} color={iconColor} style={{ marginRight: 8 }} />
         <TextInput
@@ -144,10 +242,20 @@ export default function LocationSearchInputs({
           value={query}
           onChangeText={handleChangeText}
         />
-        {isGettingLocation && <ActivityIndicator size="small" color={theme.primary} />}
+        {/* {isGettingLocation && <ActivityIndicator size="small" color={theme.primary} />} */}
+        {isPickup && currentLocation && !isGettingLocation && (
+          <TouchableOpacity 
+            onPress={handleUseCurrentLocation}
+            style={styles.currentLocationButton}
+          >
+            {isGettingLocation ? (<ActivityIndicator size="small" color={theme.primary} />) : (
+
+            <Ionicons name="navigate" size={18} color={theme.primary} />
+            )}
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* --- Local dropdown (kept for all pages) --- */}
       {showDropdown && showResults && predictions.length > 0 && (
         <FlatList
           data={predictions}
@@ -189,5 +297,9 @@ const styles = StyleSheet.create({
   resultText: {
     marginLeft: 8,
     fontSize: 14,
+  },
+  currentLocationButton: {
+    padding: 4,
+    marginLeft: 8,
   },
 });

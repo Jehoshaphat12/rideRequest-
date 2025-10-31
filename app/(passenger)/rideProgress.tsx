@@ -317,7 +317,7 @@ export default function RideInProgressScreen() {
               />
               <View style={styles.driverInfo}>
                 <Text style={[styles.driverName, { color: theme.text }]}>
-                  {ride.riderInfo?.name || "Driver"}
+                  {ride.riderInfo?.userName || "Driver"}
                 </Text>
                 <Text style={[styles.driverRating, { color: theme.muted }]}>
                   ⭐ {ride.riderInfo?.rating?.toFixed(1) || "4.8"} ({ride.riderInfo?.totalRides || "0"} rides)

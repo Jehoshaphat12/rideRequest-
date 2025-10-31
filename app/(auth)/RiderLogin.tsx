@@ -1,11 +1,13 @@
 import { auth } from "@/lib/firebaseConfig";
 import { AuthError, loginUser } from "@/services/auth";
+import { getUserProfile } from "@/services/users";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Google from "expo-auth-session/providers/google";
 import { Link, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import {
   GoogleAuthProvider,
+  onAuthStateChanged,
   signInWithCredential,
 } from "firebase/auth";
 import React, { useEffect, useState } from "react";
@@ -49,6 +51,28 @@ export default function RiderLogin() {
     redirectUri: "https://auth.expo.io/@jehoshaphat12/rideRequest",
 
   });
+
+
+  useEffect(() => {
+        
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+          const profile = await getUserProfile()
+          if (user) {
+            
+            // You can later replace this with a role check if needed
+            if(profile?.role === "rider") {
+    
+              router.replace("/(rider)/riderHome");
+            } else if(profile?.role === "passenger") {
+              router.replace("/(passenger)/passengerWelcomeScreen")
+            }
+          } else {
+            return
+          }
+        });
+    
+        return () => unsubscribe();
+      }, []);
 
   // ✅ Handle Google Sign-In Response
   useEffect(() => {

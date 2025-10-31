@@ -63,6 +63,7 @@ export interface DeliveryRequest extends BaseServiceRequest {
   pickup: Location;
   dropoff: DropoffLocation;
   packageDetails: PackageDetails;
+  passengerId: string,
   status: DeliveryStatus;
   urgent: boolean;
 }
@@ -73,6 +74,7 @@ export interface RideRequest extends BaseServiceRequest {
   dropoff: any; // You might want to refine this to a specific type
   passengerId: string;
   passengerInfo?: PassengerInfo;
+  riderId: string
 }
 
 export type ServiceRequest = RideRequest | DeliveryRequest;
