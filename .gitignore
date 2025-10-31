@@ -1,5 +1,13 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
+#  // // ✅ Initialize Google Auth Request
+#   // const [request, response, promptAsync] = Google.useAuthRequest({
+#   //   webClientId: "REMOVED", // 🔹 Replace this with your actual Web client ID
+#   //   clientId: "REMOVED",
+#   //   redirectUri: "https://auth.expo.io/@jehoshaphat12/rideRequest",
+
+#   // });
+
 # dependencies
 node_modules/
 
