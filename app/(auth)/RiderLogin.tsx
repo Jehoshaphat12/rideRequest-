@@ -65,20 +65,7 @@ export default function RiderLogin() {
         return () => unsubscribe();
       }, []);
 
-  // ✅ Handle Google Sign-In Response
-  // useEffect(() => {
-  //   if (response?.type === "success") {
-  //     const { id_token } = response.params;
-  //     const credential = GoogleAuthProvider.credential(id_token);
-  //     signInWithCredential(auth, credential)
-  //       .then(() => {
-  //         console.log("✅ Google Sign-In successful");
-  //       })
-  //       .catch((error) => {
-  //         console.error("❌ Google Sign-In error:", error);
-  //       });
-  //   }
-  // }, [response]);
+ 
 
   // 🔹 Handle email/password login
   const handleLogin = async () => {
