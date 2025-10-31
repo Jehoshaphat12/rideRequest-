@@ -2,13 +2,10 @@ import { auth } from "@/lib/firebaseConfig";
 import { AuthError, loginUser } from "@/services/auth";
 import { getUserProfile } from "@/services/users";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import * as Google from "expo-auth-session/providers/google";
 import { Link, useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import {
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithCredential,
+  onAuthStateChanged
 } from "firebase/auth";
 import React, { useEffect, useState } from "react";
 import {
@@ -44,13 +41,13 @@ export default function RiderLogin() {
   const [success, setSuccess] = useState(false);
   const router = useRouter();
 
-  // ✅ Initialize Google Auth Request
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: "REMOVED", // 🔹 Replace this with your actual Web client ID
-    clientId: "REMOVED",
-    redirectUri: "https://auth.expo.io/@jehoshaphat12/rideRequest",
+  // // ✅ Initialize Google Auth Request
+  // const [request, response, promptAsync] = Google.useAuthRequest({
+  //   webClientId: "REMOVED", // 🔹 Replace this with your actual Web client ID
+  //   clientId: "REMOVED",
+  //   redirectUri: "https://auth.expo.io/@jehoshaphat12/rideRequest",
 
-  });
+  // });
 
   useEffect(() => {
       
@@ -74,20 +71,20 @@ export default function RiderLogin() {
     }, []);
 
     
-  // ✅ Handle Google Sign-In Response
-  useEffect(() => {
-    if (response?.type === "success") {
-      const { id_token } = response.params;
-      const credential = GoogleAuthProvider.credential(id_token);
-      signInWithCredential(auth, credential)
-        .then(() => {
-          console.log("✅ Google Sign-In successful");
-        })
-        .catch((error) => {
-          console.error("❌ Google Sign-In error:", error);
-        });
-    }
-  }, [response]);
+  // // ✅ Handle Google Sign-In Response
+  // useEffect(() => {
+  //   if (response?.type === "success") {
+  //     const { id_token } = response.params;
+  //     const credential = GoogleAuthProvider.credential(id_token);
+  //     signInWithCredential(auth, credential)
+  //       .then(() => {
+  //         console.log("✅ Google Sign-In successful");
+  //       })
+  //       .catch((error) => {
+  //         console.error("❌ Google Sign-In error:", error);
+  //       });
+  //   }
+  // }, [response]);
 
   // 🔹 Handle email/password login
   const handleLogin = async () => {
@@ -274,7 +271,7 @@ export default function RiderLogin() {
             </View>
 
             {/* ✅ Google Sign-In Button */}
-            <View style={styles.formAction}>
+            {/* <View style={styles.formAction}>
               <TouchableOpacity
                 disabled={!request}
                 onPress={() => promptAsync()}
@@ -290,7 +287,7 @@ export default function RiderLogin() {
                   <Text style={styles.googleBtnText}>Sign in with Google</Text>
                 </View>
               </TouchableOpacity>
-            </View>
+            </View> */}
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>
