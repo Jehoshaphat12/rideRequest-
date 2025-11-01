@@ -1,8 +1,11 @@
 // app/_layout.tsx
+import SplashScreen from "@/components/SplashScreen";
 import { RideRequestListenerProvider } from "@/contexts/RideRequestListenerContext";
 import { listenToAuthChanges } from "@/services/authListener";
 import { getUserProfile } from "@/services/users";
+import * as Notifications from 'expo-notifications';
 import { Stack, useRouter } from "expo-router";
+import { hideAsync, preventAutoHideAsync } from "expo-router/build/utils/splash";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
@@ -16,7 +19,7 @@ function RootLayoutContent() {
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [initialAuthCheck, setInitialAuthCheck] = useState(false);
-  const [showSplash, setShowSplash] = useState(true); // 🆕 Splash screen state
+ 
   const hasHiddenSplash = useRef(false);
 
   const [riderId, setRiderId] = useState<string | null>(null);
@@ -141,7 +144,7 @@ function RootLayoutContent() {
     if (rideId) {
       router.push({
         pathname: "/(rider)/incomingCallScreen",
-        params: { id: rideId }
+        params: { id: rideId.toString() }
       });
     }
   });
@@ -149,19 +152,6 @@ function RootLayoutContent() {
   return () => subscription.remove();
 }, []);
 
-  // 🆕 Minimum splash screen duration
-//   useEffect(() => {
-//   if (hasHiddenSplash.current) return;
-//   const splashTimer = setTimeout(() => {
-//     setShowSplash(false);
-//     hasHiddenSplash.current = true;
-//   }, 3000);
-//   return () => clearTimeout(splashTimer);
-// }, []);
-
-//   if (showSplash) {
-//     return <SplashScreen />;
-//   }
 
   if (checkingAuth && !initialAuthCheck) {
     return <Loader msg="Loading..." />;
@@ -177,7 +167,24 @@ function RootLayoutContent() {
   );
 }
 
+preventAutoHideAsync().catch(() => {}); // Prevent Expo's splash screen from auto-hiding 
+
 export default function RootLayout() {
+   const [showSplash, setShowSplash] = useState(true); // 🆕 Splash screen state
+
+   useEffect(() => {
+    // Hide Expo splash as soon as your app is ready (or after your custom one)
+    hideAsync();
+  }, []);
+
+   useEffect(() => {
+  setTimeout(() => {
+    setShowSplash(false)
+  }, 4000)
+})
+ if (showSplash) {
+  return <SplashScreen />
+ }
   return (
     <ThemeProvider>
       <RootLayoutContent />

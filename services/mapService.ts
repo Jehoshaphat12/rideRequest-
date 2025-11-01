@@ -184,11 +184,12 @@ export async function getRouteWithFare(
 }
 
 export async function getRoute(origin: Location, destination: Location): Promise<Route> {
+  const modes = ["two_wheeler", "driving"]
   try {
     const originStr = `${origin.latitude}, ${origin.longitude}`
     const destinationStr = `${destination.latitude}, ${destination.longitude}`
 
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&mode=two_wheeler&key=${GOOGLE_MAPS_API_KEY}`;
 
     const response = await fetch(url)
     const data = await response.json()

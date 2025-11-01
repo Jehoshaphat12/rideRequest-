@@ -2,6 +2,7 @@ export async function sendPushNotification(
     expoPushToken: string,
     title: string,
     body: string,
+    data: any = {}
 ) {
     const message = {
         to: expoPushToken,

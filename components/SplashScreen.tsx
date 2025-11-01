@@ -8,7 +8,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('@/assets/images/icon.png')} // Your app logo
+        source={require('@/assets/images/splash.png')} // Your app logo
         style={styles.logo}
         resizeMode="contain"
       />
@@ -18,13 +18,15 @@ export default function SplashScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    width: width,
+    height: height,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#7500fc', // Or your brand color
   },
   logo: {
-    width: width * 0.4,
-    height: width * 0.4,
+    width: width,
+    // height: width,
   },
 });

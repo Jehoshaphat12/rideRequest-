@@ -39,42 +39,72 @@ export async function sendPushNotification(
   }
 }
 
+// export const notifyRidersOnNewRequest = functions.firestore
+//   .document("rides/{rideId}")
+//   .onCreate(async (snap: functions.firestore.QueryDocumentSnapshot) => {
+//     const ride = snap.data();
+//     if (!ride) return;
+
+//     try {
+//       const ridersSnap = await admin.firestore()
+//         .collection("users")
+//         .where("role", "==", "rider")
+//         .where("expoPushToken", "!=", null)
+//         .get();
+
+//       const notificationPromises = [];
+      
+//       for (const riderDoc of ridersSnap.docs) {
+//         const rider = riderDoc.data();
+//         if (rider.expoPushToken) {
+//           notificationPromises.push(
+//             sendPushNotification(
+//               rider.expoPushToken,
+//               "🚖 New Ride Request",
+//               "A passenger nearby needs a ride!",
+//               { rideId: snap.id }
+//             ).catch(error => {
+//               console.error(`Failed to notify rider ${riderDoc.id}:`, error);
+//               return null;
+//             })
+//           );
+//         }
+//       }
+
+//       await Promise.all(notificationPromises);
+//       console.log(`Notification process completed for ride ${snap.id}`);
+      
+//     } catch (error) {
+//       console.error("Error in notifyRidersOnNewRequest:", error);
+//     }
+//   });
+
+interface Rider {
+  role: string;
+  expoPushToken?: string;
+}
+
+interface Ride {
+  id: string;
+  [key: string]: any; // for other ride properties
+}
+
 export const notifyRidersOnNewRequest = functions.firestore
-  .document("rides/{rideId}")
-  .onCreate(async (snap: functions.firestore.QueryDocumentSnapshot) => {
-    const ride = snap.data();
+  .onDocumentCreated('rides/{rideId}', async (event: functions.Change<functions.firestore.DocumentSnapshot>) => {
+    const ride = event.data?.data() as Ride | undefined;
     if (!ride) return;
 
-    try {
-      const ridersSnap = await admin.firestore()
-        .collection("users")
-        .where("role", "==", "rider")
-        .where("expoPushToken", "!=", null)
-        .get();
+    const ridersSnap = await admin.firestore().collection("users").where("role", "==", "rider").get();
 
-      const notificationPromises = [];
-      
-      for (const riderDoc of ridersSnap.docs) {
-        const rider = riderDoc.data();
-        if (rider.expoPushToken) {
-          notificationPromises.push(
-            sendPushNotification(
-              rider.expoPushToken,
-              "🚖 New Ride Request",
-              "A passenger nearby needs a ride!",
-              { rideId: snap.id }
-            ).catch(error => {
-              console.error(`Failed to notify rider ${riderDoc.id}:`, error);
-              return null;
-            })
-          );
-        }
+    for (const doc of ridersSnap.docs) {
+      const rider = doc.data() as Rider;
+      if (rider.expoPushToken) {
+        await sendPushNotification(
+          rider.expoPushToken,
+          "🚖 New Ride Request",
+          "A passenger nearby needs a ride!",
+          { rideId: ride.id }
+        );
       }
-
-      await Promise.all(notificationPromises);
-      console.log(`Notification process completed for ride ${snap.id}`);
-      
-    } catch (error) {
-      console.error("Error in notifyRidersOnNewRequest:", error);
     }
   });

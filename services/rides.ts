@@ -1,6 +1,5 @@
 import { auth, db } from "@/lib/firebaseConfig";
-import admin from "firebase-admin";
-import * as functions from "firebase-functions";
+// import admin from "firebase-admin";
 import {
   addDoc,
   collection,
@@ -9,9 +8,8 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { sendPushNotification } from "./sendPushNotification";
 
-admin.initializeApp();
+// admin.initializeApp();
 
 type LocationPoint = {
   lat: number;
@@ -228,23 +226,22 @@ export async function cancelRide(rideId: string, cancelledBy: string, reason?: s
 
 
 
-export const notifyRidersOnNewRequest = functions.firestore
-  .document("rides/{rideId}")
-  .onCreate(async (snap) => {
-    const ride = snap.data();
-    if (!ride) return;
+// export const notifyRidersOnNewRequest = functions.firestore
+//   .onDocumentCreated('rides/{rideId}', async (event) => {
+//     const ride = event.data?.data();
+//     if (!ride) return;
 
-    const ridersSnap = await admin.firestore().collection("users").where("role", "==", "rider").get();
+//     const ridersSnap = await admin.firestore().collection("users").where("role", "==", "rider").get();
 
-    for (const doc of ridersSnap.docs) {
-      const rider = doc.data();
-      if (rider.expoPushToken) {
-        await sendPushNotification(
-          rider.expoPushToken,
-          "🚖 New Ride Request",
-          "A passenger nearby needs a ride!",
-          { rideId: snap.id }
-        );
-      }
-    }
-  });
+//     for (const doc of ridersSnap.docs) {
+//       const rider = doc.data();
+//       if (rider.expoPushToken) {
+//         await sendPushNotification(
+//           rider.expoPushToken,
+//           "🚖 New Ride Request",
+//           "A passenger nearby needs a ride!",
+//           { rideId: ride.id }
+//         );
+//       }
+//     }
+//   });

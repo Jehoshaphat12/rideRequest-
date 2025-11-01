@@ -80,6 +80,8 @@ export default function RegisterScreen() {
         "passenger"
       );
 
+      Alert.alert("Email Verification", "Please check your email inbox to verify your email. If verification email can't be found in inbo, check you spam folder.");
+
       // Success - the auth listener in _layout.tsx will handle navigation
       // No need to show alert or navigate manually
     } catch (error: any) {

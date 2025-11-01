@@ -158,8 +158,7 @@ export default function RiderHomeScreen() {
       console.log("🔄 Refreshing shownRequests...");
       setShownRequests((prev) => {
         const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-        const newSet = new Set();
-
+        const newSet = new Set<string>();
         // Only keep requests that are still recent
         filteredRequests.forEach((req) => {
           if (req.createdAt) {
@@ -1221,7 +1220,7 @@ const styles = StyleSheet.create({
     // backgroundColor applied dynamically
   },
   serviceOptionText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
   statusToggle: {

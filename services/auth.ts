@@ -6,6 +6,7 @@ import {
   confirmPasswordReset,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail as firebaseSendPasswordResetEmail,
+  sendEmailVerification,
   signInWithEmailAndPassword
 } from "firebase/auth";
 
@@ -137,6 +138,10 @@ export const registerUser = async (
     );
     const user = userCredential.user;
 
+    await sendEmailVerification(user);
+
+
+
     // You can add user data to Firestore here if needed
     // await createUser(user.uid, userData);
     // ✅ Save extra data in Firestore
@@ -146,6 +151,9 @@ export const registerUser = async (
       userName,
       phone,
       role,
+      emailVerified: user.emailVerified,
+      // phoneVerified: false,
+      // verified: false,
       onboardingStatus: role === "rider" ? "incomplete" : "not-required",
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

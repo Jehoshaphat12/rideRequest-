@@ -47,9 +47,9 @@ export interface DeliveryFareRate extends FareRate {
 
 // Default fare rates (in GHS)
 const DEFAULT_FARE_RATES: FareRate = {
-  baseFare: 2.00,
-  perKm: 5.00,
-  perMinute: 0.05,
+  baseFare: 1.00,
+  perKm: 4.00,
+  perMinute: 0.04,
   minimumFare: 5,
   currency: 'GHS'
 };
@@ -79,13 +79,42 @@ export function calculateFare(
   const distanceKm = distance / 1000;
   const durationMinutes = duration / 60;
 
+
+  // Apply distance dampening beyond threshhold
+  const thresholdKm = 5; // after 5km, cost per km reduces
+  let effectivePerKm = fareRates.perKm
+
+  if(distanceKm > thresholdKm) {
+    // Reduce the perKm rate gradually, but not below 60% of the base rate
+    const excessKm = distanceKm - thresholdKm
+    const reductionFactor = Math.min(0.4, excessKm * 0.3) // 2% less per km per extra km
+    effectivePerKm = fareRates.perKm * (1 - reductionFactor)
+  }
+
   // Calculate components
-  const distanceFare = distanceKm * fareRates.perKm;
+  const distanceFare = distanceKm * effectivePerKm;
   const timeFare = durationMinutes * fareRates.perMinute;
   const totalFare = fareRates.baseFare + distanceFare + timeFare;
 
   // Apply minimum fare
-  const finalFare = Math.max(totalFare, fareRates.minimumFare);
+  const finalFare = Math.max(Math.round(totalFare * 10) / 10, fareRates.minimumFare);
+
+  if (distance <= 0 || duration <= 0) {
+  return {
+    baseFare: fareRates.baseFare,
+    distanceFare: 0,
+    timeFare: 0,
+    totalFare: fareRates.minimumFare,
+    currency: fareRates.currency,
+    breakdown: {
+      base: fareRates.baseFare,
+      perKm: effectivePerKm,
+      perMinute: fareRates.perMinute,
+      distance: 0,
+      duration: 0
+    }
+  };
+}
 
   return {
     baseFare: fareRates.baseFare,
@@ -95,7 +124,7 @@ export function calculateFare(
     currency: fareRates.currency,
     breakdown: {
       base: fareRates.baseFare,
-      perKm: fareRates.perKm,
+      perKm: effectivePerKm,
       perMinute: fareRates.perMinute,
       distance: distanceKm,
       duration: durationMinutes
@@ -118,8 +147,28 @@ export function calculateDeliveryFare(
   const distanceKm = distance / 1000;
   const durationMinutes = duration / 60;
 
+  // 🎯 Adaptive dampening thresholds per package size
+  const dampeningSettings = {
+    small: { thresholdKm: 8, maxReduction: 0.4 },   // starts earlier, reduces more
+    medium: { thresholdKm: 10, maxReduction: 0.3 }, // balanced
+    large: { thresholdKm: 12, maxReduction: 0.2 }   // later, less reduction
+  };
+
+   const { thresholdKm, maxReduction } = dampeningSettings[packageSize];
+
+   // ⚙️ Distance dampening beyond threshold
+  // const thresholdKm = 5; // After 5km, reduce the perKm rate gradually
+  let effectivePerKm = fareRates.perKm;
+
+  if (distanceKm > thresholdKm) {
+    const excessKm = distanceKm - thresholdKm;
+    // Reduce perKm gradually (2% per extra km)
+    const reductionFactor = Math.min(maxReduction, excessKm * 0.02);
+    effectivePerKm = fareRates.perKm * (1 - reductionFactor);
+  }
+
   // Calculate base fare components
-  const baseDistanceFare = distanceKm * fareRates.perKm;
+  const baseDistanceFare = distanceKm * effectivePerKm;
   const timeFare = durationMinutes * fareRates.perMinute;
   
   // Apply size multiplier
@@ -134,7 +183,7 @@ export function calculateDeliveryFare(
   const totalFare = sizeAdjustedFare + additionalFees;
 
   // Apply minimum fare
-  const finalFare = Math.max(totalFare, fareRates.minimumFare);
+  const finalFare = Math.max(Math.round(totalFare * 10) / 10, fareRates.minimumFare);
 
   return {
     baseFare: fareRates.baseFare,
@@ -146,7 +195,7 @@ export function calculateDeliveryFare(
     additionalFees,
     breakdown: {
       base: fareRates.baseFare,
-      perKm: fareRates.perKm,
+      perKm: effectivePerKm,
       perMinute: fareRates.perMinute,
       distance: distanceKm,
       duration: durationMinutes

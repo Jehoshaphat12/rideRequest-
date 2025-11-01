@@ -171,7 +171,7 @@ export default function EditProfileScreen() {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
+        aspect: [4, 4],
         quality: 0.7, //Slightly lower quality for faster uploads
         allowsMultipleSelection: false,
       });
