@@ -141,7 +141,7 @@ export default function FullLocationPicker({
               }}
               // showDropdown={false}
               autoFillCurrentLocation={false}
-              isPickup={false}
+              isPickup
               onPredictionsChange={(data: any[]) => {
                 if (activeField === "destination") setPredictions(data);
               }}

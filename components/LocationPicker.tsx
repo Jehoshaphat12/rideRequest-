@@ -15,6 +15,7 @@ import {
   View,
 } from "react-native";
 import LocationSearchInput from "./LocationSearchInput";
+import LocationSearchInputs from "./LocationSearchInputs";
 
 // Web-compatible map component
 const WebMapPicker = React.lazy(() =>
@@ -319,12 +320,12 @@ export default function LocationPicker({
 
         {/* Search Bar */}
         <View style={[styles.searchContainer, { backgroundColor: theme.card }]}>
-          <LocationSearchInput
+          <LocationSearchInputs
             placeholder="Enter Location"
             iconName="locate-outline"
             iconColor={theme.primary}
             onLocationSelect={handleLocationSelect}
-            isPickup={false}
+            isPickup
             autoFillCurrentLocation={true}
           />
         </View>

@@ -130,9 +130,9 @@ const handleUseCurrentLocation = async () => {
       currentLocation.longitude
     );
 
-    const testAddress = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
+    // const testAddress = `${currentLocation.latitude.toFixed(6)}, ${currentLocation.longitude.toFixed(6)}`;
     
-    console.log('Testing with coordinates address:', testAddress);
+    // console.log('Testing with coordinates address:', testAddress);
     
     // handleSelectLocation({
     //   lat: currentLocation.latitude,
@@ -243,7 +243,7 @@ const handleUseCurrentLocation = async () => {
           onChangeText={handleChangeText}
         />
         {/* {isGettingLocation && <ActivityIndicator size="small" color={theme.primary} />} */}
-        {isPickup && currentLocation && !isGettingLocation && (
+        {currentLocation && !isGettingLocation && (
           <TouchableOpacity 
             onPress={handleUseCurrentLocation}
             style={styles.currentLocationButton}

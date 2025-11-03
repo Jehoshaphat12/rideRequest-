@@ -272,8 +272,8 @@ export default function RiderLogin() {
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                Don't have an account?{" "}
-                <Link href={"/Register"} style={styles.footerLink}>
+                Don't have an account yet?{" "}
+                <Link href={"/(auth)/RiderRegister"} style={styles.footerLink}>
                   Sign Up
                 </Link>
               </Text>

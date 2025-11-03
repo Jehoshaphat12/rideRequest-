@@ -1,5 +1,5 @@
 import { AuthError, registerUser } from "@/services/auth";
-import { isValidEmail } from "@/utils/validation";
+import { isValidEmail, isValidPhone } from "@/utils/validation";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
@@ -52,6 +52,12 @@ export default function RegisterScreen() {
     if (!isValidEmail(form.email)) {
           setPrompt(true);
           setPromptMsg("❌ Invalid email format. Please check and try again.");
+          return;
+        }
+
+      if (!isValidPhone(form.phone)) {
+          setPrompt(true);
+          setPromptMsg("❌ Invalid phone number. Please check and try again.");
           return;
         }
 
@@ -272,7 +278,7 @@ export default function RegisterScreen() {
             <View style={styles.footer}>
               <Text style={styles.footerText}>
                 Already have an account?{" "}
-                <Link href={"/(riderAuth)/RiderLogin"} style={styles.footerLink}>
+                <Link href={"/(auth)/RiderLogin"} style={styles.footerLink}>
                   Sign in
                 </Link>
               </Text>

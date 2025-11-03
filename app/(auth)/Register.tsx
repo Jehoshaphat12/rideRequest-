@@ -54,6 +54,7 @@ export default function RegisterScreen() {
           setPromptMsg("❌ Invalid email format. Please check and try again.");
           return;
         }
+    
 
     if (form.password.length < 6) {
       Alert.alert("Error", "Password must be at least 6 characters long");

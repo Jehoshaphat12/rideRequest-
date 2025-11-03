@@ -11,6 +11,8 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -159,7 +161,7 @@ export default function RequestDeliveryScreen() {
     // Phone number validation
     const phoneRegex = /^(\+233|0)[235]\d{8}$/;
     if (!phoneRegex.test(form.recipientPhone.replace(/\s/g, ''))) {
-      Alert.alert('Error', 'Please enter a valid Ghanaian phone number');
+      Alert.alert('Error', 'Please enter a valid phone number');
       return;
     }
 
@@ -240,6 +242,10 @@ export default function RequestDeliveryScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+      <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+          >
         <StatusBar
                 barStyle={darkMode ? "light-content" : "dark-content"}
                 backgroundColor={theme.background}
@@ -555,6 +561,7 @@ export default function RequestDeliveryScreen() {
           initialAddress={locationPickerType === 'pickup' ? form.pickupAddress : form.dropoffAddress}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
