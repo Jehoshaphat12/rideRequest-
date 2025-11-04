@@ -1,11 +1,13 @@
 // app/_layout.tsx
 import SplashScreen from "@/components/SplashScreen";
+import { LanguageProvider } from "@/contexts/LanguageContext";
+import { PaymentProvider } from "@/contexts/PaymentContext";
 import { RideRequestListenerProvider } from "@/contexts/RideRequestListenerContext";
 import { listenToAuthChanges } from "@/services/authListener";
 import { getUserProfile } from "@/services/users";
-import * as Notifications from 'expo-notifications';
+import * as Notifications from "expo-notifications";
 import { Stack, useRouter } from "expo-router";
-import { hideAsync, preventAutoHideAsync } from "expo-router/build/utils/splash";
+import * as SplashScreen1 from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
@@ -13,13 +15,16 @@ import Toast from "react-native-toast-message";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import Loader from "./Loader";
 
+
+
+
 function RootLayoutContent() {
   const { darkMode } = useTheme();
   const router = useRouter();
 
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [initialAuthCheck, setInitialAuthCheck] = useState(false);
- 
+
   const hasHiddenSplash = useRef(false);
 
   const [riderId, setRiderId] = useState<string | null>(null);
@@ -27,8 +32,6 @@ function RootLayoutContent() {
   // Use a ref to track the current navigation "ticket"
   const navigationTicketRef = useRef(0);
   const authListenerInitialized = useRef(false);
-
-  
 
   const checkProfileAndNavigate = async (
     user: any,
@@ -40,6 +43,8 @@ function RootLayoutContent() {
       console.log("Cancelling stale navigation request");
       return;
     }
+
+
 
     try {
       if (!user || !role) {
@@ -139,19 +144,20 @@ function RootLayoutContent() {
   }, []);
 
   useEffect(() => {
-  const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-    const rideId = response.notification.request.content.data.rideId;
-    if (rideId) {
-      router.push({
-        pathname: "/(rider)/incomingCallScreen",
-        params: { id: rideId.toString() }
-      });
-    }
-  });
+    const subscription = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const rideId = response.notification.request.content.data.rideId;
+        if (rideId) {
+          router.push({
+            pathname: "/(rider)/incomingCallScreen",
+            params: { id: rideId.toString() },
+          });
+        }
+      }
+    );
 
-  return () => subscription.remove();
-}, []);
-
+    return () => subscription.remove();
+  }, []);
 
   if (checkingAuth && !initialAuthCheck) {
     return <Loader msg="Loading..." />;
@@ -167,28 +173,38 @@ function RootLayoutContent() {
   );
 }
 
-preventAutoHideAsync().catch(() => {}); // Prevent Expo's splash screen from auto-hiding 
+// preventAutoHideAsync().catch(() => {}); // Prevent Expo's splash screen from auto-hiding
+SplashScreen1.preventAutoHideAsync()
 
 export default function RootLayout() {
-   const [showSplash, setShowSplash] = useState(true); // 🆕 Splash screen state
+  const [showSplash, setShowSplash] = useState(true); // 🆕 Splash screen state
 
-   useEffect(() => {
+  useEffect(() => {
     // Hide Expo splash as soon as your app is ready (or after your custom one)
-    hideAsync();
+    const hideSplash =  async () => {
+
+      await SplashScreen1.hideAsync();
+    }
+
+    hideSplash()
   }, []);
 
-   useEffect(() => {
-  setTimeout(() => {
-    setShowSplash(false)
-  }, 4000)
-})
- if (showSplash) {
-  return <SplashScreen />
- }
+  useEffect(() => {
+    setTimeout(() => {
+      setShowSplash(false);
+    }, 4000);
+  });
+  if (showSplash) {
+    return <SplashScreen />;
+  }
   return (
     <ThemeProvider>
-      <RootLayoutContent />
-      <Toast />
+      <LanguageProvider>
+        <PaymentProvider>
+          <RootLayoutContent />
+          <Toast />
+        </PaymentProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 }

@@ -1,9 +1,16 @@
 import { auth } from "@/lib/firebaseConfig";
 import { getUserProfile } from "@/services/users";
+import messaging from "@react-native-firebase/messaging";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+
+
+    // Register background handler
+messaging().setBackgroundMessageHandler(async remoteMessage => {
+  console.log('Message handled in the background!', remoteMessage);
+});
 
 export default function Index() {
   const router = useRouter();
