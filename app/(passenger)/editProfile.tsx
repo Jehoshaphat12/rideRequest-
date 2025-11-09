@@ -50,33 +50,47 @@ export default function EditProfileScreen() {
     fetchUserProfile();
   }, []);
 
-  const uploadImage = async (uri: string, path: string, userId: string): Promise<string> => {
+ const uploadImage = async (
+  uri: string,
+  path: string,
+  userId: string
+): Promise<string> => {
   try {
-    const bucketName = "Ride Request User profiles"; // ensure this bucket exists
-    const response = await fetch(uri);
-    const blob = await response.blob();
-
+    // Generate filename and path
     const fileExt = uri.split(".").pop()?.split("?")[0] || "jpg";
     const filePath = `${path}/${userId}.${fileExt}`;
+    
+    const BUCKET_NAME = "Ride Request User profiles";
 
-    // Delete old file (ignore if it doesn’t exist)
-    await supabase.storage.from(bucketName).remove([filePath]);
+    // Get the actual file data
+    const response = await fetch(uri);
+    const imageData = await response.arrayBuffer();
 
-    // Upload new file
-    const { error } = await supabase.storage.from(bucketName).upload(filePath, blob, {
-      contentType: blob.type,
-      upsert: true,
-    });
-    if (error) {
-      console.log("Supabase upload error:", error);
-      throw error;
+    // Upload directly to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .upload(filePath, imageData, {
+        contentType: `image/${fileExt}`,
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
     }
 
     // Get public URL
-    const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+    const { data } = supabase.storage
+      .from(BUCKET_NAME)
+      .getPublicUrl(filePath);
+
+    if (!data.publicUrl) {
+      throw new Error('Failed to get public URL');
+    }
+
     return data.publicUrl;
   } catch (error: any) {
-    console.log("Upload error:", error);
+    console.error('Image upload error:', error);
     throw new Error(error.message || "Failed to upload image");
   }
 };

@@ -27,7 +27,7 @@ export default function PassengerProfileScreen() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.replace("/"); // Navigate to login screen
+      router.replace("/(auth)/Login"); // Navigate to login screen
     } catch (error) {
       console.error("Error signing out:", error);
     }

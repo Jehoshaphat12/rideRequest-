@@ -1,15 +1,10 @@
-
 import { useTheme } from "@/contexts/ThemeContext";
 import { auth, db } from "@/lib/firebaseConfig";
+import { addNotification } from "@/services/notifications";
+import { acceptRide } from "@/services/rides";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  query,
-  where
-} from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
   FlatList,
@@ -19,7 +14,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 import Loader from "../Loader";
 
 export default function IncomingRideScreen() {
@@ -42,20 +37,28 @@ export default function IncomingRideScreen() {
     return () => unsub();
   }, []);
 
-  const acceptRide = async (rideId: string) => {
-    if (!auth.currentUser) return;
+  const handleAcceptRide = async (rideId: string) => {
+    const user = auth.currentUser
+    if (!user) return;
     try {
-      const rideRef = doc(db, "rides", rideId);
+      // const rideRef = doc(db, "rides", rideId);
       // await updateDoc(rideRef, {
       //   status: "accepted",
       //   riderId: auth.currentUser.uid,
       // });
       await acceptRide(rideId);
-      
+      await addNotification(
+        user.uid,
+        "ride_accepted",
+        "Ride Accepted ✅",
+        "You are now assigned to a passenger",
+        rideId
+      );
+
       // Navigate to ride progress screen after accepting
       router.push({
         pathname: "/(rider)/riderRideProgress",
-        params: { rideId }
+        params: { rideId },
       });
     } catch (err) {
       console.error("Error accepting ride:", err);
@@ -65,21 +68,21 @@ export default function IncomingRideScreen() {
   // // Helper function to safely extract address text
   // const getAddressText = (address: any): string => {
   //   if (!address) return "Location not specified";
-    
+
   //   // If address is a string, return it directly
   //   if (typeof address === 'string') return address;
-    
+
   //   // If address is an object, try to extract meaningful text
   //   if (typeof address === 'object') {
   //     if (address.address) return address.address;
   //     if (address.formattedAddress) return address.formattedAddress;
   //     if (address.street && address.city) return `${address.street}, ${address.city}`;
   //     if (address.name) return address.name;
-      
+
   //     // If it's a complex object, stringify it (fallback)
   //     return "Location details available";
   //   }
-    
+
   //   return "Location not specified";
   // };
 
@@ -89,26 +92,29 @@ export default function IncomingRideScreen() {
 
   if (requests.length === 0) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-        <StatusBar 
-          barStyle={darkMode ? "light-content" : "dark-content"} 
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: theme.background }]}
+      >
+        <StatusBar
+          barStyle={darkMode ? "light-content" : "dark-content"}
           backgroundColor={theme.background}
         />
-        
+
         {/* Header with Back Button */}
-        <View style={[styles.navheader, { 
-          borderBottomColor: theme.border,
-          backgroundColor: theme.card 
-        }]}>
+        <View
+          style={[
+            styles.navheader,
+            {
+              borderBottomColor: theme.border,
+              backgroundColor: theme.card,
+            },
+          ]}
+        >
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color={theme.text}
-            />
+            <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
             Ride Requests
@@ -130,33 +136,36 @@ export default function IncomingRideScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <StatusBar 
-        barStyle={darkMode ? "light-content" : "dark-content"} 
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
+      <StatusBar
+        barStyle={darkMode ? "light-content" : "dark-content"}
         backgroundColor={theme.background}
       />
-      
+
       {/* Header with Back Button */}
-      <View style={[styles.navheader, { 
-        borderBottomColor: theme.border,
-        backgroundColor: theme.card 
-      }]}>
+      <View
+        style={[
+          styles.navheader,
+          {
+            borderBottomColor: theme.border,
+            backgroundColor: theme.card,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
-          <Ionicons
-            name="arrow-back"
-            size={24}
-            color={theme.text}
-          />
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
           Ride Requests ({requests.length})
         </Text>
         <View style={styles.headerSpacer} />
       </View>
-      
+
       <FlatList
         data={requests}
         keyExtractor={(item) => item.id}
@@ -164,24 +173,42 @@ export default function IncomingRideScreen() {
         renderItem={({ item }) => (
           <View style={[styles.card, { backgroundColor: theme.card }]}>
             <View style={styles.cardHeader}>
-              <Ionicons name="person-circle-outline" size={24} color={theme.primary} />
+              <Ionicons
+                name="person-circle-outline"
+                size={24}
+                color={theme.primary}
+              />
               <Text style={[styles.passengerText, { color: theme.text }]}>
                 Passenger Request
               </Text>
             </View>
-            
+
             <View style={styles.detailRow}>
-              <Ionicons name="location-outline" size={20} color={theme.primary} />
-              <Text style={[styles.label, { color: theme.muted }]}>Pickup:</Text>
-              <Text style={[styles.value, { color: theme.text }]} numberOfLines={2}>
+              <Ionicons
+                name="location-outline"
+                size={20}
+                color={theme.primary}
+              />
+              <Text style={[styles.label, { color: theme.muted }]}>
+                Pickup:
+              </Text>
+              <Text
+                style={[styles.value, { color: theme.text }]}
+                numberOfLines={2}
+              >
                 {item.pickup.address}
               </Text>
             </View>
 
             <View style={styles.detailRow}>
               <Ionicons name="flag-outline" size={20} color={theme.primary} />
-              <Text style={[styles.label, { color: theme.muted }]}>Destination:</Text>
-              <Text style={[styles.value, { color: theme.text }]} numberOfLines={2}>
+              <Text style={[styles.label, { color: theme.muted }]}>
+                Destination:
+              </Text>
+              <Text
+                style={[styles.value, { color: theme.text }]}
+                numberOfLines={2}
+              >
                 {item.dropoff.address}
               </Text>
             </View>
@@ -189,16 +216,21 @@ export default function IncomingRideScreen() {
             {item.fare && (
               <View style={styles.detailRow}>
                 <Ionicons name="cash-outline" size={20} color={theme.primary} />
-                <Text style={[styles.label, { color: theme.muted }]}>Fare:</Text>
+                <Text style={[styles.label, { color: theme.muted }]}>
+                  Fare:
+                </Text>
                 <Text style={[styles.value, { color: theme.text }]}>
-                  GHS {typeof item.fare === 'number' ? item.fare.toFixed(2) : item.fare}
+                  GHS{" "}
+                  {typeof item.fare === "number"
+                    ? item.fare.toFixed(2)
+                    : item.fare}
                 </Text>
               </View>
             )}
 
             <TouchableOpacity
               style={[styles.button, { backgroundColor: theme.primary }]}
-              onPress={() => acceptRide(item.id)}
+              onPress={() => handleAcceptRide(item.id)}
             >
               <Text style={[styles.buttonText, { color: theme.primaryText }]}>
                 Accept Ride
@@ -295,7 +327,7 @@ const styles = StyleSheet.create({
   value: {
     fontSize: 14,
     flex: 1,
-    flexWrap: 'wrap',
+    flexWrap: "wrap",
   },
   button: {
     paddingVertical: 14,

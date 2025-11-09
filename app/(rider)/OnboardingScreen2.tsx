@@ -47,7 +47,7 @@ export default function RiderOnboardingScreen() {
 
 
      // ✅ Delete old file before uploading (to avoid extension mismatch problems)
-    await supabase.storage.from("ride-request-user-profiles").remove([filePath]);
+    await supabase.storage.from("Ride Request User profiles").remove([filePath]);
 
     // Upload blob to Supabase Storage
     const { error } = await supabase.storage

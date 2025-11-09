@@ -27,7 +27,9 @@ export default function LoginScreen() {
           router.replace("/(rider)/riderHome")
         } else if (profile && profile.role === "passenger") {
           router.replace("/(passenger)/passengerWelcomeScreen")
-        } else return
+        } else {
+          router.replace("/(auth)/Login")
+        }
       } catch (error) {
         console.error("Error", error)
       }

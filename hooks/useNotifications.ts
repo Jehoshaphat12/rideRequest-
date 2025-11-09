@@ -1,7 +1,6 @@
 // hooks/useNotifications.ts
 import { auth, db } from "@/lib/firebaseConfig";
 import { sendPushNotification } from "@/services/sendPushNotification";
-import messaging from "@react-native-firebase/messaging";
 import {
   collection,
   onSnapshot,
@@ -30,23 +29,23 @@ const requestUserPermission = async () => {
   // }
 }
 
-const getToken = async () => {
-  try {
-    const token = await messaging().getToken
-    console.log("FCM Token",token);
+// const getToken = async () => {
+//   try {
+//     const token = await messaging().getToken
+//     console.log("FCM Token",token);
     
-  } catch (error) {
-    console.error("failed to get FCM Token: ", error);
+//   } catch (error) {
+//     console.error("failed to get FCM Token: ", error);
     
-  }
-}
+//   }
+// }
 
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     requestUserPermission()
-    getToken()
+    // getToken()
     const user = auth.currentUser;
     if (!user) return;
 

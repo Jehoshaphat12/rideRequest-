@@ -4,6 +4,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { PaymentProvider } from "@/contexts/PaymentContext";
 import { RideRequestListenerProvider } from "@/contexts/RideRequestListenerContext";
 import { listenToAuthChanges } from "@/services/authListener";
+import { registerForPushNotificationsAsync } from "@/services/notifications";
 import { getUserProfile } from "@/services/users";
 import * as Notifications from "expo-notifications";
 import { Stack, useRouter } from "expo-router";
@@ -144,20 +145,46 @@ function RootLayoutContent() {
   }, []);
 
   useEffect(() => {
+  async function initPush() {
+    const token = await registerForPushNotificationsAsync();
+    console.log("Expo Push Token:", token);
+  }
+
+  initPush();
+}, []);
+
+  useEffect(() => {
+  async function setupNotifications() {
+    // 1. Android notification channel
+    await Notifications.setNotificationChannelAsync("default", {
+      name: "Default",
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: "#FF231F7C",
+    });
+
+    // 2. Handle notification taps
     const subscription = Notifications.addNotificationResponseReceivedListener(
       (response) => {
-        const rideId = response.notification.request.content.data.rideId;
+        const { rideId, screen } = response.notification.request.content.data;
+
+        if (!screen) return; // if no screen specified, do nothing
         if (rideId) {
           router.push({
-            pathname: "/(rider)/incomingCallScreen",
+            pathname: screen as any,
             params: { id: rideId.toString() },
           });
+        } else if (screen) {
+          router.push({ pathname: screen as any });
         }
       }
     );
 
     return () => subscription.remove();
-  }, []);
+  }
+
+  setupNotifications();
+}, []);
 
   if (checkingAuth && !initialAuthCheck) {
     return <Loader msg="Loading..." />;
@@ -196,6 +223,9 @@ export default function RootLayout() {
   });
   if (showSplash) {
     return <SplashScreen />;
+
+    
+
   }
   return (
     <ThemeProvider>

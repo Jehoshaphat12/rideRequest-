@@ -44,7 +44,7 @@ export default function RiderProfileScreen() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.replace("/");
+      router.replace("/(auth)/RiderLogin");
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -226,13 +226,13 @@ export default function RiderProfileScreen() {
             icon="language-outline"
             label="Language"
             theme={theme}
-            onPress={() => router.push("/(rider)/riderHome")}
+            onPress={() => router.push("/(rider)/language")}
           />
           <OptionRow
             icon="information-circle-outline"
             label="About App"
             theme={theme}
-            onPress={() => router.push("/(rider)/riderHome")}
+            onPress={() => router.push("/(rider)/aboutApp")}
           />
         </View>
 

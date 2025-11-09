@@ -1,7 +1,6 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import { db } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
-import { addNotification } from "@/services/notifications";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -45,13 +44,13 @@ export default function RideCompletedScreen() {
           setRide(rideData);
           
           // Add notification for completed ride
-          await addNotification(
-            rideData.riderId,
-            "ride_completed",
-            "Ride Completed Successfully 🎉",
-            `You earned ${formatFare(rideData.finalFare || rideData.estimatedFare || 0)}`,
-            rideId
-          );
+          // await addNotification(
+          //   rideData.riderId,
+          //   "ride_completed",
+          //   "Ride Completed Successfully 🎉",
+          //   `You earned ${formatFare(rideData.finalFare || rideData.estimatedFare || 0)}`,
+          //   rideId
+          // );
         } else {
           Alert.alert("Error", "Ride not found");
           router.back();
@@ -220,17 +219,15 @@ export default function RideCompletedScreen() {
               </Text>
             </View>
 
-            {ride.completedAt && (
-              <View style={styles.detailRow}>
-                <Ionicons name="calendar-outline" size={18} color={theme.muted} />
-                <Text style={[styles.detailLabel, { color: theme.muted }]}>
-                  Completed:
-                </Text>
-                <Text style={[styles.detailValue, { color: theme.text }]}>
-                  {new Date(ride.completedAt.toDate()).toLocaleDateString()}
-                </Text>
-              </View>
-            )}
+            {ride.completedAt && ride.completedAt.toDate && (
+  <View style={styles.detailRow}>
+    <Ionicons name="calendar-outline" size={18} color={theme.muted} />
+    <Text style={[styles.detailLabel, { color: theme.muted }]}>Completed:</Text>
+    <Text style={[styles.detailValue, { color: theme.text }]}>
+      {new Date(ride.completedAt.toDate()).toLocaleDateString()}
+    </Text>
+  </View>
+)}
           </View>
         </View>
 

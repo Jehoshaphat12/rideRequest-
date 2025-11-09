@@ -1,19 +1,25 @@
 import { auth } from "@/lib/firebaseConfig";
 import { getUserProfile } from "@/services/users";
-import messaging from "@react-native-firebase/messaging";
+import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 
 
-    // Register background handler
-messaging().setBackgroundMessageHandler(async remoteMessage => {
-  console.log('Message handled in the background!', remoteMessage);
-});
+
 
 export default function Index() {
   const router = useRouter();
+
+
+  Notifications.setNotificationChannelAsync("default", {
+  name: "Default",
+  importance: Notifications.AndroidImportance.MAX,
+  vibrationPattern: [0, 250, 250, 250],
+  lightColor: "#7500fc",
+});
+
 
   useEffect(() => {
     

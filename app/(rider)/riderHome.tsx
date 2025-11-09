@@ -1,4 +1,5 @@
 import MapViewComponent from "@/components/MapViewComponent";
+import RideDetailsModal from "@/components/RideDetailsModal";
 import { useRideRequestListener } from "@/contexts/RideRequestListenerContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useCurrentLocation } from "@/hooks/useCurrentLocation";
@@ -7,6 +8,7 @@ import { auth, db } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
 import { addNotification } from "@/services/notifications";
 import { acceptRide, updateRiderLocation } from "@/services/rides";
+import { sendPushNotification } from "@/services/sendPushNotification";
 import { getUserProfile } from "@/services/users";
 import {
   DeliveryRequest,
@@ -31,9 +33,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Dimensions,
-  FlatList,
   Platform,
   ScrollView,
   StatusBar,
@@ -48,7 +48,7 @@ import Loader from "../Loader";
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const CARD_WIDTH = SCREEN_WIDTH - 80;
 const CARD_MARGIN = 8;
-const MAX_DISTANCE_KM = 20;
+const MAX_DISTANCE_KM = 3;
 
 export default function RiderHomeScreen() {
   const [status, setStatus] = useState<"online" | "offline">("offline");
@@ -66,16 +66,28 @@ export default function RiderHomeScreen() {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const { location } = useCurrentLocation();
   const [mounted, setMounted] = useState(false);
-  const [cardsVisible, setCardsVisible] = useState(true);
-  const [controlsMinimized, setControlsMinimized] = useState(false);
   const { currentLocation } = useLocationTracking();
   const [shownRequests, setShownRequests] = useState<Set<string>>(new Set());
   const { isListening, currentRequests } = useRideRequestListener();
+  const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(
+    null
+  );
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+
+  // Handle Viewing Details Modal
+  const handleViewDetails = (request: ServiceRequest) => {
+    setSelectedRequest(request);
+    setShowDetailsModal(true);
+  };
+
+  // Hanlde Closing Details Modal
+  const handleCloseDetails = () => {
+    setShowDetailsModal(false);
+    setSelectedRequest(null);
+  };
 
   // Carousel state
   const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const flatListRef = useRef<FlatList>(null);
 
   const rideListenerRef = useRef<(() => void) | null>(null);
 
@@ -206,7 +218,7 @@ export default function RiderHomeScreen() {
           request.pickup.lat,
           request.pickup.lng
         );
-        const isNearby = distance <= MAX_DISTANCE_KM;
+        const isNearby = distance < MAX_DISTANCE_KM;
 
         const serviceMatch =
           activeService === "both" ||
@@ -472,6 +484,25 @@ export default function RiderHomeScreen() {
           "You are now assigned to a passenger",
           request.id
         );
+        // Send push notification - obtain a string token from getIdTokenResult() and include the ride id
+        try {
+          const idTokenResult = await rider.getIdTokenResult();
+          const idToken = idTokenResult?.token || "";
+          await sendPushNotification(
+            idToken,
+            "Ride Accepted ✅",
+            "You are now assigned to a passenger",
+            {
+              screen: router.push({
+                pathname: "/(rider)/riderRideProgress",
+                params: { rideId: request.id },
+              }),
+              rideId: request.id,
+            }
+          );
+        } catch (err) {
+          console.warn("Failed to get id token for push notification:", err);
+        }
 
         Alert.alert("Ride Accepted", "You've accepted the ride request! 🚗");
         router.push({
@@ -492,6 +523,26 @@ export default function RiderHomeScreen() {
           "You are now assigned to a delivery",
           request.id
         );
+
+        // Send push notification - obtain a string token from getIdTokenResult() and include the ride id
+        try {
+          const idTokenResult = await rider.getIdTokenResult();
+          const idToken = idTokenResult?.token || "";
+          await sendPushNotification(
+            idToken,
+            "Delivery Accepted ✅",
+            "You are now assigned to a delivery",
+            {
+              screen: router.push({
+                pathname: "/(rider)/deliveryProgress",
+                params: { deliveryId: request.id },
+              }),
+              rideId: request.id,
+            }
+          );
+        } catch (err) {
+          console.warn("Failed to get id token for push notification:", err);
+        }
 
         Alert.alert(
           "Delivery Accepted",
@@ -753,6 +804,19 @@ export default function RiderHomeScreen() {
 
           <View style={styles.buttonRow}>
             <TouchableOpacity
+              style={[styles.detailsBtn, { borderColor: theme.border }]}
+              onPress={() => handleViewDetails(item)}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={16}
+                color={theme.primary}
+              />
+              <Text style={[styles.detailsText, { color: theme.primary }]}>
+                Details
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
               style={[styles.ignoreBtn, { borderColor: theme.border }]}
               onPress={() => ignoreRequest(item.id)}
               disabled={loading}
@@ -917,6 +981,19 @@ export default function RiderHomeScreen() {
           </View>
 
           <View style={styles.buttonRow}>
+            <TouchableOpacity
+              style={[styles.detailsBtn, { borderColor: theme.border }]}
+              onPress={() => handleViewDetails(item)}
+            >
+              <Ionicons
+                name="information-circle-outline"
+                size={16}
+                color={theme.primary}
+              />
+              <Text style={[styles.detailsText, { color: theme.primary }]}>
+                Details
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.ignoreBtn, { borderColor: theme.border }]}
               onPress={() => ignoreRequest(item.id)}
@@ -1119,6 +1196,13 @@ export default function RiderHomeScreen() {
           </Text>
         </View>
       )}
+
+      <RideDetailsModal
+        visible={showDetailsModal}
+        onClose={handleCloseDetails}
+        request={selectedRequest as any}
+        currentLocation={currentLocation!}
+      />
     </SafeAreaView>
   );
 }
@@ -1465,6 +1549,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     marginTop: 8,
+  },
+  detailsBtn: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 6,
+  },
+  detailsText: {
+    fontSize: 12,
+    fontWeight: "600",
   },
   ignoreBtn: {
     flex: 1,

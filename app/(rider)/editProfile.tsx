@@ -56,34 +56,43 @@ export default function EditProfileScreen() {
     userId: string
   ): Promise<string> => {
     try {
-      // Convert URI → Blob (works with expo-image-picker)
-      const response = await fetch(uri);
-      const blob = await response.blob();
+      
 
       // Generate filename
       const fileExt = uri.split(".").pop()?.split("?")[0] || "jpg";
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${path}/${userId}.${fileExt}`;
 
+      // Convert URI → Blob (works with expo-image-picker)
+      const response = await fetch(uri);
+      const imageData = await response.arrayBuffer();
+
       // Delete old file before uploading (to avoid extension mismatch problems)
       await supabase.storage
-        .from("ride-request-user-profiles")
+        .from("Ride Request User profiles")
         .remove([filePath]);
 
       // Upload blob to Supabase Storage
-      const { error } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from("Ride Request User profiles")
-        .upload(filePath, blob, {
-          contentType: blob.type,
+        .upload(filePath, imageData, {
+          contentType: `image/${fileExt}`,
           upsert: true,
         });
 
-      if (error) throw error;
+      if (uploadError) {
+      console.error('Upload error:', uploadError);
+      throw new Error(`Failed to upload image: ${uploadError.message}`);
+    }
 
       // Get public Url
-      const { data } = supabase.storage
+      const { data } = await supabase.storage
         .from("Ride Request User profiles")
         .getPublicUrl(filePath);
+
+      if (!data.publicUrl) {
+      throw new Error('Failed to get public URL');
+    }
 
       return data.publicUrl;
     } catch (error) {
