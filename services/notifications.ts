@@ -4,7 +4,7 @@ import * as Notifications from "expo-notifications"
 import { addDoc, collection, doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore"
 import { sendPushNotification } from "./sendPushNotification"
 
-export async function addNotification(userId: string, type: string, title: string, body: string, rideId?: string) {
+export async function addNotification(userId: string, type: string, title: string, body: string, rideId?: string, screen?: string) {
     const notifRef = collection(db, "users", userId, "notifications")
 
     await addDoc(notifRef, {
@@ -12,6 +12,7 @@ export async function addNotification(userId: string, type: string, title: strin
         title,
         body,
         rideId: rideId || null,
+        screen: screen || null,
         createdAt: serverTimestamp(),
         read: false
     })
@@ -22,7 +23,9 @@ export async function addNotification(userId: string, type: string, title: strin
     
     // Send push notification if token exists
     if(token) {
-        await sendPushNotification(token, title, body)
+        await sendPushNotification(token, title, body, {
+            rideId, screen
+        })
     }
 }
 

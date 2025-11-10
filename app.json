@@ -47,9 +47,9 @@
           "imageWidth": "100%",
           "imageHeight": "100%",
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#7500fc",
           "dark": {
-            "backgroundColor": "#000000",
+            "backgroundColor": "#7500fc",
             "image": "./assets/images/splash-icon1.png"
           }
         }

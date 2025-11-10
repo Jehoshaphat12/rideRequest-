@@ -9,7 +9,7 @@ export async function sendPushNotification(
         sound: "default",
         title,
         body,
-        data: {screen, ...data}, // you can use this  to navigate to a specific screen
+        data: {...data}, // you can use this  to navigate to a specific screen
     }
 
      try {

@@ -61,7 +61,8 @@ export default function RideCompletedScreen() {
             "ride_completed",
             "Ride Completed Successfully 🎉",
             `Your ride has been completed. Thank you for choosing us!`,
-            rideId
+            rideId,
+            "/(passenger)/completedRide"
           );
         } else {
           Alert.alert("Error", "Ride not found");

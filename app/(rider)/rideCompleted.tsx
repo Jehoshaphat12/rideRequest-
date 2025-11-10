@@ -16,13 +16,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
+const confirmImg = require("@/assets/images/confirm1.png")
 
 export default function RideCompletedScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { theme, darkMode } = useTheme();
-  const rideId = Array.isArray(params.rideId) ? params.rideId[0] : params.rideId;
+  const rideId = Array.isArray(params.rideId)
+    ? params.rideId[0]
+    : params.rideId;
 
   const [ride, setRide] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +45,7 @@ export default function RideCompletedScreen() {
         if (rideDoc.exists()) {
           const rideData = rideDoc.data();
           setRide(rideData);
-          
+
           // Add notification for completed ride
           // await addNotification(
           //   rideData.riderId,
@@ -68,7 +71,10 @@ export default function RideCompletedScreen() {
 
   const handleSubmitRating = async () => {
     if (rating === 0) {
-      Alert.alert("Please Rate", "Please select a star rating before submitting");
+      Alert.alert(
+        "Please Rate",
+        "Please select a star rating before submitting"
+      );
       return;
     }
 
@@ -82,9 +88,9 @@ export default function RideCompletedScreen() {
       // Update ride with rating
       // You'll need to implement this in your rides service
       // await updateRideRating(rideId, rating, "rider");
-      
+
       Alert.alert(
-        "Thank You!", 
+        "Thank You!",
         "Your rating has been submitted successfully.",
         [{ text: "OK", onPress: () => router.replace("/(rider)/riderHome") }]
       );
@@ -106,7 +112,9 @@ export default function RideCompletedScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+      <View
+        style={[styles.loadingContainer, { backgroundColor: theme.background }]}
+      >
         <ActivityIndicator size="large" color={theme.primary} />
         <Text style={[styles.loadingText, { color: theme.text }]}>
           Loading ride summary...
@@ -117,7 +125,9 @@ export default function RideCompletedScreen() {
 
   if (!ride) {
     return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.background }]}>
+      <View
+        style={[styles.errorContainer, { backgroundColor: theme.background }]}
+      >
         <Text style={[styles.errorText, { color: theme.danger }]}>
           Ride not found
         </Text>
@@ -134,23 +144,27 @@ export default function RideCompletedScreen() {
   }
 
   const fare = ride.finalFare || ride.estimatedFare || 0;
-  const duration = ride.estimatedDuration ? parseInt(ride.estimatedDuration) : 25;
+  const duration = ride.estimatedDuration
+    ? parseInt(ride.estimatedDuration)
+    : 25;
   const distance = ride.estimatedDistance || "8.4 km";
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
-      <ScrollView 
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background }]}
+    >
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Success Section */}
         <View style={styles.successSection}>
           <Image
-            source={require("../../assets/images/confirm.png")}
+            source={confirmImg}
             style={styles.successImage}
             resizeMode="contain"
           />
-          
+
           <Text style={[styles.title, { color: theme.text }]}>
             Ride Completed 🎉
           </Text>
@@ -164,7 +178,7 @@ export default function RideCompletedScreen() {
           <Text style={[styles.cardTitle, { color: theme.text }]}>
             Trip Summary
           </Text>
-          
+
           <View style={styles.summaryRow}>
             <View style={styles.summaryItem}>
               <Ionicons name="cash-outline" size={24} color={theme.success} />
@@ -187,7 +201,11 @@ export default function RideCompletedScreen() {
             </View>
 
             <View style={styles.summaryItem}>
-              <Ionicons name="trending-up-outline" size={24} color={theme.primary} />
+              <Ionicons
+                name="trending-up-outline"
+                size={24}
+                color={theme.primary}
+              />
               <Text style={[styles.summaryLabel, { color: theme.muted }]}>
                 Distance
               </Text>
@@ -204,7 +222,10 @@ export default function RideCompletedScreen() {
               <Text style={[styles.detailLabel, { color: theme.muted }]}>
                 Pickup:
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} numberOfLines={1}>
+              <Text
+                style={[styles.detailValue, { color: theme.text }]}
+                numberOfLines={1}
+              >
                 {ride.pickup?.address || "Pickup location"}
               </Text>
             </View>
@@ -214,20 +235,29 @@ export default function RideCompletedScreen() {
               <Text style={[styles.detailLabel, { color: theme.muted }]}>
                 Destination:
               </Text>
-              <Text style={[styles.detailValue, { color: theme.text }]} numberOfLines={1}>
+              <Text
+                style={[styles.detailValue, { color: theme.text }]}
+                numberOfLines={1}
+              >
                 {ride.dropoff?.address || "Destination"}
               </Text>
             </View>
 
             {ride.completedAt && ride.completedAt.toDate && (
-  <View style={styles.detailRow}>
-    <Ionicons name="calendar-outline" size={18} color={theme.muted} />
-    <Text style={[styles.detailLabel, { color: theme.muted }]}>Completed:</Text>
-    <Text style={[styles.detailValue, { color: theme.text }]}>
-      {new Date(ride.completedAt.toDate()).toLocaleDateString()}
-    </Text>
-  </View>
-)}
+              <View style={styles.detailRow}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={18}
+                  color={theme.muted}
+                />
+                <Text style={[styles.detailLabel, { color: theme.muted }]}>
+                  Completed:
+                </Text>
+                <Text style={[styles.detailValue, { color: theme.text }]}>
+                  {new Date(ride.completedAt.toDate()).toLocaleDateString()}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -237,9 +267,10 @@ export default function RideCompletedScreen() {
             Rate Your Passenger
           </Text>
           <Text style={[styles.ratingSubtitle, { color: theme.muted }]}>
-            How was your experience with {ride.passengerInfo?.name || "the passenger"}?
+            How was your experience with{" "}
+            {ride.passengerInfo?.name || "the passenger"}?
           </Text>
-          
+
           <View style={styles.starContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
               <TouchableOpacity
@@ -257,7 +288,9 @@ export default function RideCompletedScreen() {
           </View>
 
           <Text style={[styles.ratingHint, { color: theme.muted }]}>
-            {rating === 0 ? "Tap a star to rate" : `You rated ${rating} star${rating !== 1 ? 's' : ''}`}
+            {rating === 0
+              ? "Tap a star to rate"
+              : `You rated ${rating} star${rating !== 1 ? "s" : ""}`}
           </Text>
 
           <TouchableOpacity
@@ -272,9 +305,7 @@ export default function RideCompletedScreen() {
             {submittingRating ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.ratingButtonText}>
-                Submit Rating
-              </Text>
+              <Text style={styles.ratingButtonText}>Submit Rating</Text>
             )}
           </TouchableOpacity>
 
@@ -304,7 +335,9 @@ export default function RideCompletedScreen() {
             onPress={() => router.push("/(rider)/rideHistory")}
           >
             <Ionicons name="list-outline" size={20} color={theme.primary} />
-            <Text style={[styles.secondaryButtonText, { color: theme.primary }]}>
+            <Text
+              style={[styles.secondaryButtonText, { color: theme.primary }]}
+            >
               View Ride History
             </Text>
           </TouchableOpacity>

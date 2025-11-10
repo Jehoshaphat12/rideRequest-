@@ -16,9 +16,6 @@ import Toast from "react-native-toast-message";
 import { ThemeProvider, useTheme } from "../contexts/ThemeContext";
 import Loader from "./Loader";
 
-
-
-
 function RootLayoutContent() {
   const { darkMode } = useTheme();
   const router = useRouter();
@@ -44,8 +41,6 @@ function RootLayoutContent() {
       console.log("Cancelling stale navigation request");
       return;
     }
-
-
 
     try {
       if (!user || !role) {
@@ -145,46 +140,47 @@ function RootLayoutContent() {
   }, []);
 
   useEffect(() => {
-  async function initPush() {
-    const token = await registerForPushNotificationsAsync();
-    console.log("Expo Push Token:", token);
-  }
+    async function initPush() {
+      const token = await registerForPushNotificationsAsync();
+      console.log("Expo Push Token:", token);
+    }
 
-  initPush();
-}, []);
+    initPush();
+  }, []);
 
   useEffect(() => {
-  async function setupNotifications() {
-    // 1. Android notification channel
-    await Notifications.setNotificationChannelAsync("default", {
-      name: "Default",
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
+    async function setupNotifications() {
+      // 1. Android notification channel
+      await Notifications.setNotificationChannelAsync("default", {
+        name: "Default",
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: "#FF231F7C",
+      });
 
-    // 2. Handle notification taps
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const { rideId, screen } = response.notification.request.content.data;
+      // 2. Handle notification taps
+      const subscription =
+        Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data;
+          const rideId = data?.rideId;
+          const screen = data?.screen;
 
-        if (!screen) return; // if no screen specified, do nothing
-        if (rideId) {
-          router.push({
-            pathname: screen as any,
-            params: { id: rideId.toString() },
-          });
-        } else if (screen) {
-          router.push({ pathname: screen as any });
-        }
-      }
-    );
+          if (!screen) return; // if no screen specified, do nothing
+          if (rideId) {
+            router.push({
+              pathname: "/(rider)/riderHome",
+              params: { id: rideId.toString() },
+            });
+          } else if (screen) {
+            router.push({ pathname: screen as any });
+          }
+        });
 
-    return () => subscription.remove();
-  }
+      return () => subscription.remove();
+    }
 
-  setupNotifications();
-}, []);
+    setupNotifications();
+  }, []);
 
   if (checkingAuth && !initialAuthCheck) {
     return <Loader msg="Loading..." />;
@@ -201,19 +197,18 @@ function RootLayoutContent() {
 }
 
 // preventAutoHideAsync().catch(() => {}); // Prevent Expo's splash screen from auto-hiding
-SplashScreen1.preventAutoHideAsync()
+SplashScreen1.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [showSplash, setShowSplash] = useState(true); // 🆕 Splash screen state
 
   useEffect(() => {
     // Hide Expo splash as soon as your app is ready (or after your custom one)
-    const hideSplash =  async () => {
-
+    const hideSplash = async () => {
       await SplashScreen1.hideAsync();
-    }
+    };
 
-    hideSplash()
+    hideSplash();
   }, []);
 
   useEffect(() => {
@@ -223,9 +218,6 @@ export default function RootLayout() {
   });
   if (showSplash) {
     return <SplashScreen />;
-
-    
-
   }
   return (
     <ThemeProvider>

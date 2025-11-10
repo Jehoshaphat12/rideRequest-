@@ -151,7 +151,9 @@ export default function PassengerHomeScreen() {
         passengerId,
         "ride_requested",
         "Your ride request has been sent.",
-        "looking for a rider..."
+        "looking for a rider...",
+        rideId,
+        "/(passenger)/waitingForRider"
       );
       Alert.alert("Ride Requested", "Waiting for a rider to accept...");
       router.push({
