@@ -157,7 +157,7 @@ export default function RiderProfileScreen() {
             icon="time-outline"
             label="Delivery History"
             theme={theme}
-            onPress={() => router.push("/(rider)/HistoryDelivery")}
+            onPress={() => router.push("/(rider)/deliveryHistory")}
           />
           <OptionRow
             icon="time-outline"

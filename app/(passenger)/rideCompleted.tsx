@@ -8,17 +8,18 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    SafeAreaView,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+const confirmImg = require("@/assets/images/confirm1.png")
 
 interface Ride {
   id: string;
@@ -269,7 +270,7 @@ export default function RideCompletedScreen() {
         {/* Success Section */}
         <View style={styles.successSection}>
           <Image
-            source={require("../../assets/images/confirm.png")}
+            source={confirmImg}
             style={styles.successImage}
             resizeMode="contain"
           />

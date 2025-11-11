@@ -1,7 +1,6 @@
 import { useTheme } from "@/contexts/ThemeContext";
 import { auth, db } from "@/lib/firebaseConfig";
-import { formatFare } from "@/services/fareService";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import {
   collection,
@@ -11,627 +10,440 @@ import {
   where,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Platform,
-  StatusBar,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-// 30 minutes in milliseconds
-const RIDE_EXPIRY_TIME = 30 * 60 * 1000;
 
 type Ride = {
   id: string;
-  pickup: any;
-  dropoff: any;
+  pickup: {
+    address: string;
+  };
+  dropoff: {
+    address: string;
+  };
   status: string;
   createdAt: any;
   fare?: number;
-  estimatedFare?: number;
+  estimatedFare: number;
   passengerInfo?: {
     name?: string;
     profilePicture?: string;
   };
 };
 
-export default function RideHistoryScreen() {
+export default function RidesHistoryScreen() {
+  const { theme } = useTheme();
+  const router = useRouter();
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-  const { theme, darkMode } = useTheme();
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "completed" | "cancelled"
+  >("all");
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    earnings: 0,
+  });
 
   useEffect(() => {
     const riderId = auth.currentUser?.uid;
-    if (!riderId) {
-      setError("User not logged in");
-      setLoading(false);
-      return;
+    if (!riderId) return;
+
+    let q;
+    if (activeFilter === "completed") {
+      q = query(
+        collection(db, "rides"),
+        where("riderId", "==", riderId),
+        where("status", "==", "completed"),
+        orderBy("createdAt", "desc")
+      );
+    } else if (activeFilter === "cancelled") {
+      q = query(
+        collection(db, "rides"),
+        where("riderId", "==", riderId),
+        where("status", "==", "cancelled"),
+        orderBy("createdAt", "desc")
+      );
+    } else {
+      q = query(
+        collection(db, "rides"),
+        where("riderId", "==", riderId),
+        orderBy("createdAt", "desc")
+      );
     }
-
-
-    const q = query(
-      collection(db, "rides"),
-      where("riderId", "==", riderId),
-      orderBy("createdAt", "desc")
-    );
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        try {
-          const fetchRides: Ride[] = snapshot.docs.map((doc) => {
-            const data = doc.data();
-            return {
+        const rideList: Ride[] = snapshot.docs.map(
+          (doc) =>
+            ({
               id: doc.id,
-              pickup: data.pickup,
-              dropoff: data.dropoff,
-              status: data.status,
-              createdAt: data.createdAt,
-              fare: data.fare || data.estimatedFare,
-              estimatedFare: data.estimatedFare,
-              passengerInfo: data.passengerInfo,
-            };
-          });
+              ...doc.data(),
+            } as Ride)
+        );
 
-          setRides(fetchRides);
-          setError(null);
-        } catch (err) {
-          console.error("Error processing rides:", err);
-          setError("Error loading rides");
-        } finally {
-          setLoading(false);
-        }
+        setRides(rideList);
+
+        // Calculate Stats
+        const completedRides = rideList.filter((d) => d.status === "completed");
+        const totalEarnings = completedRides.reduce(
+          (sum, ride) => sum + ride.estimatedFare,
+          0
+        );
+
+        setStats({
+          total: rideList.length,
+          completed: completedRides.length,
+          earnings: totalEarnings,
+        });
+
+        setLoading(false);
       },
       (error) => {
-        console.error("Firestore error:", error);
-        setError("Failed to load ride history");
+        console.error("Error fetching rides history: ", error);
         setLoading(false);
       }
     );
 
     return () => unsubscribe();
-  }, []);
+  }, [activeFilter]);
 
-  const isRideExpired = (ride: Ride): boolean => {
-    if (!ride.createdAt) return false; // Don't mark completed rides as expired
-
-    // Only check pending/accepted rides for expiry
-    if (
-      ride.status !== "pending" &&
-      ride.status !== "accepted" &&
-      ride.status !== "arrived"
-    ) {
-      return false;
-    }
-
-    const rideTime = ride.createdAt.toDate().getTime();
-    const currentTime = new Date().getTime();
-    const timeDifference = currentTime - rideTime;
-
-    return timeDifference > RIDE_EXPIRY_TIME;
-  };
-
-  const getTimeSinceCreation = (ride: Ride): string => {
-    if (!ride.createdAt) return "Unknown time";
-
-    const rideTime = ride.createdAt.toDate().getTime();
-    const currentTime = new Date().getTime();
-    const timeDifference = currentTime - rideTime;
-    const minutes = Math.floor(timeDifference / (1000 * 60));
-
-    if (minutes < 1) return "Just now";
-    if (minutes === 1) return "1 minute ago";
-    if (minutes < 60) return `${minutes} minutes ago`;
-
-    const hours = Math.floor(minutes / 60);
-    return `${hours} hour${hours !== 1 ? "s" : ""} ago`;
-  };
-
-  const handleRidePress = (ride: Ride) => {
-    if (isRideExpired(ride)) {
-      Alert.alert(
-        "Ride Expired",
-        "This ride request has expired (more than 30 minutes old).",
-        [{ text: "OK" }]
-      );
-      return;
-    }
-
-    // Navigate based on ride status
-    if (ride.status === "pending") {
-      // Show ride request details
-      Alert.alert(
-        "Ride Request",
-        `You have a pending ride request from ${
-          ride.pickup?.address || "pickup location"
-        } to ${ride.dropoff?.address || "destination"}`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "View Details",
-            onPress: () => {
-              // Navigate to ride request details screen
-              router.push({
-                pathname: "/(rider)/riderRideProgress",
-                params: { rideId: ride.id },
-              });
-            },
-          },
-        ]
-      );
-    } else if (ride.status === "accepted") {
-      // Navigate to active ride screen
-      router.push({
-        pathname: "/(rider)/riderRideProgress",
-        params: { rideId: ride.id },
-      });
-    } else if (ride.status === "arrived") {
-      // Navigate to active ride screen
-      router.push({
-        pathname: "/(rider)/riderRideProgress",
-        params: { rideId: ride.id },
-      });
-    } else if (ride.status === "picked_up") {
-      // Navigate to active ride screen
-      router.push({
-        pathname: "/(rider)/riderRideProgress",
-        params: { rideId: ride.id },
-      });
-    } else if (ride.status === "completed") {
-      // Navigate to ride completion details
-      router.push({
-        pathname: "/(rider)/rideCompleted",
-        params: { rideId: ride.id },
-      });
-    }
-  };
-
-  const getStatusColor = (ride: Ride) => {
-    if (isRideExpired(ride)) return theme.danger;
-
-    switch (ride.status) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
       case "completed":
         return theme.success;
-      case "accepted":
-        return theme.primary;
-      case "pending":
-        return theme.warning;
       case "cancelled":
         return theme.danger;
+      case "picked_up":
+        return theme.info;
+      case "accepted":
+        return theme.primary;
       default:
         return theme.muted;
     }
   };
 
-  const getStatusText = (ride: Ride) => {
-    if (isRideExpired(ride)) return "EXPIRED";
-    return ride.status.toUpperCase();
-  };
-
-  // Helper function to safely extract address text
-  const getAddressText = (address: any): string => {
-    if (!address) return "Location not specified";
-
-    if (typeof address === "string") return address;
-
-    if (typeof address === "object") {
-      if (address.address) return address.address;
-      if (address.formattedAddress) return address.formattedAddress;
-      if (address.street && address.city)
-        return `${address.street}, ${address.city}`;
-      if (address.name) return address.name;
-
-      return "Location details available";
-    }
-
-    return "Location not specified";
-  };
-
-  // Helper function to format date safely
-  const formatDate = (timestamp: any): string => {
-    if (!timestamp?.toDate) return "Date not available";
-
-    try {
-      return timestamp.toDate().toLocaleDateString("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Invalid date";
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return "checkmark-circle";
+      case "cancelled":
+        return "close-circle";
+      case "picked_up":
+        return "bicycle";
+      case "accepted":
+        return "person";
+      default:
+        return "time";
     }
   };
 
-  const renderTrip = ({ item }: { item: Ride }) => {
-    const expired = isRideExpired(item);
-    const timeAgo = getTimeSinceCreation(item);
-
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return "N/A";
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return (
-      <TouchableOpacity
-        style={[
-          styles.card,
-          { backgroundColor: theme.card },
-          expired && styles.expiredCard,
-        ]}
-        onPress={() => handleRidePress(item)}
-      >
-        {/* Status and Time Row */}
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(item) + "20" },
-            ]}
-          >
-            <Text style={[styles.statusText, { color: getStatusColor(item) }]}>
-              {getStatusText(item)}
-            </Text>
-          </View>
-          <Text style={[styles.timeText, { color: theme.muted }]}>
-            {timeAgo}
-          </Text>
-        </View>
-
-        {/* Passenger Info (if available) */}
-        {item.passengerInfo?.name && (
-          <View style={styles.passengerRow}>
-            <Ionicons name="person-outline" size={16} color={theme.primary} />
-            <Text style={[styles.passengerText, { color: theme.text }]}>
-              {item.passengerInfo.name}
-            </Text>
-          </View>
-        )}
-
-        {/* Locations */}
-        <View style={styles.locationSection}>
-          <View style={styles.row}>
-            <Ionicons name="location-outline" size={16} color={theme.primary} />
-            <Text
-              style={[styles.label, { color: theme.text }]}
-              numberOfLines={2}
-            >
-              {getAddressText(item.pickup)}
-            </Text>
-          </View>
-
-          <View style={styles.row}>
-            <Ionicons name="flag-outline" size={16} color={theme.primary} />
-            <Text
-              style={[styles.label, { color: theme.text }]}
-              numberOfLines={2}
-            >
-              {getAddressText(item.dropoff)}
-            </Text>
-          </View>
-        </View>
-
-        {/* Fare and Date */}
-        <View style={[styles.footerRow, {borderColor: theme.border}]}>
-          <Text style={[styles.fare, { color: theme.text }]}>
-            {formatFare(item.fare || item.estimatedFare || 0)}
-          </Text>
-          <Text style={[styles.date, { color: theme.muted }]}>
-            {formatDate(item.createdAt)}
-          </Text>
-        </View>
-
-        {/* Expired Message */}
-        {expired && (
-          <View style={styles.expiredMessage}>
-            <Ionicons name="time-outline" size={14} color={theme.danger} />
-            <Text style={[styles.expiredText, { color: theme.danger }]}>
-              This ride request has expired
-            </Text>
-          </View>
-        )}
-      </TouchableOpacity>
+      date.toLocalDateString() +
+      " " +
+      date.toLocalTimeString([], { hour: "2-digit", minute: "2-digit" })
     );
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: theme.background }]}
-      >
-        <StatusBar
-          barStyle={darkMode ? "light-content" : "dark-content"}
-          backgroundColor={theme.background}
-        />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>
-            Ride History
-          </Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.primary} />
-          <Text style={[styles.loadingText, { color: theme.text }]}>
-            Loading your rides...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: theme.background }]}
-      >
-        <StatusBar
-          barStyle={darkMode ? "light-content" : "dark-content"}
-          backgroundColor={theme.background}
-        />
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={theme.text} />
-          </TouchableOpacity>
-          <Text style={[styles.headerTitle, { color: theme.text }]}>
-            Ride History
-          </Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <View style={styles.errorContainer}>
-          <Ionicons
-            name="alert-circle-outline"
-            size={64}
-            color={theme.danger}
-          />
-          <Text style={[styles.errorText, { color: theme.text }]}>{error}</Text>
-          <TouchableOpacity
-            style={[styles.retryButton, { backgroundColor: theme.primary }]}
-            onPress={() => {
-              setLoading(true);
-              setError(null);
-            }}
-          >
-            <Text
-              style={[styles.retryButtonText, { color: theme.primaryText }]}
-            >
-              Try Again
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: theme.background }]}
+  const renderRideItem = ({ item }: { item: Ride }) =>(
+    <TouchableOpacity
+      style={[styles.rideItem, { backgroundColor: theme.card }]}
+      onPress={() =>
+        router.push(`/(rider)/riderRideProgress?rideId=${item.id}`)
+      }
     >
-      <StatusBar
-        barStyle={darkMode ? "light-content" : "dark-content"}
-        backgroundColor={theme.background}
-      />
-
-      {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            borderBottomColor: theme.border,
-            backgroundColor: theme.card,
-          },
-        ]}
-      >
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>
-          Ride History ({rides.length})
+      <View style={styles.rideHeader}>
+        <View style={styles.statusContainer}>
+          <Ionicons
+            name={getStatusIcon(item.status) as any}
+            size={16}
+            color={getStatusColor(item.status)}
+          />
+          <Text
+            style={[styles.statusText, { color: getStatusColor(item.status) }]}
+          >
+            {item.status.replace("_", " ").toUpperCase()}
+          </Text>
+        </View>
+        <Text style={[styles.fareText, { color: theme.primary }]}>
+          GHS {item.estimatedFare?.toFixed(2)}
         </Text>
-        <View style={{ width: 24 }} />
       </View>
 
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: theme.text }]}>Your Trips</Text>
+      <View style={styles.routeContainer}>
+        <View style={styles.locationRow}>
+          <Ionicons name="location" size={14} color={theme.primary} />
+          <Text
+            style={[styles.locationText, { color: theme.text }]}
+            numberOfLines={1}
+          >
+            {item.pickup.address}
+          </Text>
+        </View>
+        <View style={styles.locationRow}>
+          <Ionicons name="flag" size={14} color={theme.success} />
+          <Text
+            style={[styles.locationText, { color: theme.text }]}
+            numberOfLines={1}
+          >
+            {item.dropoff.address}
+          </Text>
+        </View>
+      </View>
 
-        {rides.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="car-outline" size={64} color={theme.muted} />
-            <Text style={[styles.emptyText, { color: theme.muted }]}>
-              No ride history yet
-            </Text>
-            <Text style={[styles.emptySubtext, { color: theme.muted }]}>
-              Your completed rides will appear here
+      <Text style={[styles.dateText, { color: theme.muted }]}>
+        {formatDate(item.createdAt)}
+      </Text>
+    </TouchableOpacity>
+);
+
+if(loading) {
+  return (
+        <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.primary} />
+            <Text style={[styles.loadingText, { color: theme.text }]}>
+              Loading ride history...
             </Text>
           </View>
-        ) : (
-          <FlatList
-            data={rides}
-            keyExtractor={(item) => item.id}
-            renderItem={renderTrip}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+        </SafeAreaView>
+      );
+}
+
+return (
+  <SafeAreaView style={[styles.container, {backgroundColor: theme.background}]}>
+    {/* Header */}
+    <View style={[styles.header, {backgroundColor: theme.card}]}>
+      <TouchableOpacity onPress={() => router.back()}>
+        <Ionicons name="arrow-back" size={24} color={theme.text} />
+      </TouchableOpacity>
+      <Text style={[styles.headerTitle, {color: theme.text}]}>Rides History</Text>
+      <View style={styles.headerSpacer} />
+    </View>
+
+    {/* Stats Overview */}
+    <View style={[styles.statsContainer, { backgroundColor: theme.card }]}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: theme.primary }]}>{stats.total}</Text>
+              <Text style={[styles.statLabel, { color: theme.muted }]}>Total</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: theme.success }]}>{stats.completed}</Text>
+              <Text style={[styles.statLabel, { color: theme.muted }]}>Completed</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: theme.warning }]}>GHS {stats.earnings.toFixed(2)}</Text>
+              <Text style={[styles.statLabel, { color: theme.muted }]}>Earnings</Text>
+            </View>
+          </View>
+
+      {/* Filter Tabs */}
+      <View style={[styles.filterContainer, {backgroundColor: theme.card}]}>
+        {(['all', 'completed', 'cancelled'] as const).map((filter) => (
+          <TouchableOpacity key={filter} style={[styles.filterButton, activeFilter === filter && [styles.filterButtonActive, {backgroundColor: theme.primary}]]}
+          onPress={() => setActiveFilter(filter)}
+          >
+            <Text style={[styles.filterText, {color: activeFilter === filter ? theme.primaryText : theme.text}]}>
+              {filter === 'all' ? 'All' : filter === 'completed' ? 'Completed' : 'Cancelled'}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
-    </SafeAreaView>
-  );
+
+      {/* Ride List */}
+
+      <FlatList
+      data={rides}
+      renderItem={renderRideItem}
+      keyExtractor={(item) => item.id}
+      contentContainerStyle={styles.listContainer}
+      ListEmptyComponent={
+        <View style={styles.emptyContainer}>
+                    <Ionicons name="cube-outline" size={64} color={theme.muted} />
+                    <Text style={[styles.emptyText, { color: theme.text }]}>
+                      No deliveries found
+                    </Text>
+                    <Text style={[styles.emptySubtext, { color: theme.muted }]}>
+                      {activeFilter === 'all' 
+                        ? "You haven't completed any deliveries yet"
+                        : `No ${activeFilter} deliveries found`
+                      }
+                    </Text>
+                  </View>
+      } />
+          
+  </SafeAreaView>
+)
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  content: {
+  loadingContainer: {
     flex: 1,
-    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    paddingTop: 20,
-    borderBottomWidth: 1,
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'center',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
+  headerSpacer: {
+    width: 24,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    margin: 16,
+    padding: 20,
+    borderRadius: 16,
+    justifyContent: 'space-between',
+  },
+  statItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  filterContainer: {
+    flexDirection: 'row',
+    padding: 8,
+    marginHorizontal: 16,
     marginBottom: 16,
+    borderRadius: 12,
   },
-  listContent: {
-    paddingBottom: 20,
+  filterButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  filterButtonActive: {
+    // backgroundColor set dynamically
+  },
+  filterText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  listContainer: {
+    padding: 16,
     gap: 12,
+    paddingBottom: 20,
   },
-  card: {
+  rideItem: {
     padding: 16,
     borderRadius: 12,
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowRadius: 4,
       },
       android: {
-        elevation: 3,
+        elevation: 2,
       },
     }),
   },
-  expiredCard: {
-    opacity: 0.7,
+  rideHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  statusBadge: {
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  urgentBadge: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fareText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  packageInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sizeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
+    gap: 4,
   },
-  statusText: {
+  sizeText: {
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: '600',
   },
-  timeText: {
-    fontSize: 12,
-  },
-  passengerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  passengerText: {
+  recipientText: {
     fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 6,
+    fontWeight: '500',
   },
-  locationSection: {
+  routeContainer: {
+    gap: 6,
     marginBottom: 12,
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    marginBottom: 6,
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  label: {
+  locationText: {
+    flex: 1,
     fontSize: 14,
-    marginLeft: 8,
-    flex: 1,
-    flexWrap: "wrap",
-    lineHeight: 18,
   },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#f0f0f0",
-  },
-  fare: {
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  date: {
+  dateText: {
     fontSize: 12,
-  },
-  expiredMessage: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 8,
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: "#ff3b3020",
-    gap: 6,
-  },
-  expiredText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
+    alignItems: 'center',
+    padding: 32,
+    gap: 16,
   },
   emptyText: {
     fontSize: 18,
-    fontWeight: "600",
-    marginTop: 16,
-    marginBottom: 8,
-    textAlign: "center",
+    fontWeight: '600',
+    textAlign: 'center',
   },
   emptySubtext: {
     fontSize: 14,
-    textAlign: "center",
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginTop: 16,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  retryButton: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
+    textAlign: 'center',
   },
 });

@@ -451,7 +451,8 @@ export default function RiderHomeScreen() {
           "new_service_requests",
           message,
           `Requests within ${MAX_DISTANCE_KM}km of your location`,
-          filteredRequests[0].id
+          filteredRequests[0].id,
+          "/(rider)/riderHome"
         );
       }
     };
@@ -482,7 +483,8 @@ export default function RiderHomeScreen() {
           "ride_accepted",
           "Ride Accepted ✅",
           "You are now assigned to a passenger",
-          request.id
+          request.id,
+          "/(rider)/riderRideProgress"
         );
         // Send push notification - obtain a string token from getIdTokenResult() and include the ride id
         try {

@@ -19,6 +19,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+const confirmImg = require("@/assets/images/confirm1.png")
 
 export default function RideCompletedScreen() {
   const [rating, setRating] = useState(0);
@@ -209,7 +210,7 @@ export default function RideCompletedScreen() {
         {/* Success Section */}
         <View style={styles.successSection}>
           <Image
-            source={require("../../assets/images/confirm.png")}
+            source={confirmImg}
             style={styles.successImage}
             resizeMode="contain"
           />

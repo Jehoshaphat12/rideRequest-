@@ -303,7 +303,7 @@ export default function CustomerHelpSupportScreen() {
                 onPress={action.onPress}
               >
                 <Ionicons
-                  name={action.icon}
+                  name={action.icon as any}
                   size={24}
                   color={action.color}
                 />
@@ -341,7 +341,7 @@ export default function CustomerHelpSupportScreen() {
               >
                 <View style={styles.contactLeft}>
                   <Ionicons
-                    name={method.icon}
+                    name={method.icon as any}
                     size={24}
                     color={method.color}
                   />
@@ -385,7 +385,7 @@ export default function CustomerHelpSupportScreen() {
                 >
                   <View style={styles.faqHeaderLeft}>
                     <Ionicons
-                      name={section.icon}
+                      name={section.icon as any}
                       size={20}
                       color={theme.primary}
                     />

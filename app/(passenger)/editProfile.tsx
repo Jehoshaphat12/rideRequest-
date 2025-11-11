@@ -140,7 +140,7 @@ export default function EditProfileScreen() {
       Alert.alert("Success", "Your profile has been updated", [
         {
           text: "OK",
-          onPress: () => router.back(),
+          onPress: () => router.replace("/(passenger)/passengerWelcomeScreen"),
         },
       ]);
     } catch (error: any) {

@@ -8,16 +8,17 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
+const confirmImg = require("@/assets/images/confirm1.png")
 
 export default function DeliveryCompletedScreen() {
   const router = useRouter();
@@ -160,7 +161,7 @@ export default function DeliveryCompletedScreen() {
         {/* Success Section */}
         <View style={styles.successSection}>
           <Image
-            source={require("../../assets/images/confirm.png")}
+            source={confirmImg}
             style={styles.successImage}
             resizeMode="contain"
           />

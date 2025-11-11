@@ -25,7 +25,7 @@ export default function ConfirmRideScreen() {
       >
         {/* Confirm Ride Image */}
         <Image
-          source={require("../../assets/images/confirm.png")}
+          source={require("../../assets/images/confirm1.png")}
           style={{width: 200, height: 200, alignSelf: "center", marginBottom: 24}}
           resizeMode="contain"
         />

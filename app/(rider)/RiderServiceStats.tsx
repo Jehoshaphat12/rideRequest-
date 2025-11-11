@@ -174,20 +174,21 @@ export default function RiderStatsScreen() {
 
         {/* Quick Actions */}
         <View style={styles.actionsContainer}>
+          
+          <TouchableOpacity 
+            style={[styles.actionButton, { backgroundColor: theme.card }]}
+            onPress={() => router.push('/(rider)/rideHistory')}
+          >
+            <Ionicons name="car-sport-outline" size={24} color={theme.primary} />
+            <Text style={[styles.actionText, { color: theme.text }]}>Ride History</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity 
             style={[styles.actionButton, { backgroundColor: theme.card }]}
             onPress={() => router.push('/(rider)/deliveryHistory')}
           >
             <Ionicons name="cube-outline" size={24} color={theme.primary} />
             <Text style={[styles.actionText, { color: theme.text }]}>Delivery History</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, { backgroundColor: theme.card }]}
-            onPress={() => router.push('/(rider)/requestedRide')}
-          >
-            <Ionicons name="car-sport-outline" size={24} color={theme.primary} />
-            <Text style={[styles.actionText, { color: theme.text }]}>Ride History</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
