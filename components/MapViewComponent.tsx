@@ -1,6 +1,7 @@
 // components/MapViewComponent.tsx
 import { darkMapStyle, lightMapStyle } from "@/constants/mapStyles";
 import { useTheme } from "@/contexts/ThemeContext";
+import { Ionicons } from "@expo/vector-icons";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -22,6 +23,10 @@ type Location = {
 interface Props {
   pickupLocation?: Location | null;
   destinationLocation?: Location | null;
+  riderLocation?: {
+    latitude: number;
+    longitude: number;
+  } | null;
   currentLocation?: { latitude: number; longitude: number } | null;
   routeCoords?: Array<{ latitude: number; longitude: number }>;
   showRoute?: boolean;
@@ -33,6 +38,7 @@ const GOOGLE_MAPS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || "";
 export default function MapViewComponent({
   pickupLocation,
   destinationLocation,
+  riderLocation,
   currentLocation,
   routeCoords,
   showRoute = false,
@@ -63,28 +69,28 @@ export default function MapViewComponent({
   // ✅ Get all valid coordinates for fitting
   const getValidCoordinates = () => {
     const coords = [];
-    
+
     if (isValidCoord(pickupLocation)) {
       coords.push({
         latitude: pickupLocation!.latitude,
         longitude: pickupLocation!.longitude,
       });
     }
-    
+
     if (isValidCoord(destinationLocation)) {
       coords.push({
         latitude: destinationLocation!.latitude,
         longitude: destinationLocation!.longitude,
       });
     }
-    
+
     if (isValidCoord(currentLocation)) {
       coords.push({
         latitude: currentLocation!.latitude,
         longitude: currentLocation!.longitude,
       });
     }
-    
+
     return coords;
   };
 
@@ -93,7 +99,7 @@ export default function MapViewComponent({
     if (!mapRef.current || !fitToMarkers) return;
 
     const validCoords = getValidCoordinates();
-    
+
     if (validCoords.length === 0) return;
 
     try {
@@ -101,11 +107,11 @@ export default function MapViewComponent({
       setTimeout(() => {
         if (mapRef.current) {
           mapRef.current.fitToCoordinates(validCoords, {
-            edgePadding: { 
-              top: 120, 
-              right: 60, 
-              bottom: 160, 
-              left: 60 
+            edgePadding: {
+              top: 120,
+              right: 60,
+              bottom: 160,
+              left: 60,
             },
             animated: true,
           });
@@ -280,6 +286,24 @@ export default function MapViewComponent({
           />
         )}
 
+        {/* Rider Location Marker */}
+      {riderLocation && (
+        <Marker
+          coordinate={{
+            latitude: riderLocation.latitude,
+            longitude: riderLocation.longitude,
+          }}
+          title="Your Rider"
+          description="Rider is on the way"
+          anchor={{ x: 0.5, y: 0.5 }}
+          rotation={riderLocation || 0}
+        >
+          <View style={styles.riderMarker}>
+            <Ionicons name="at-circle" size={20} color="#FFFFFF" />
+          </View>
+        </Marker>
+      )}
+
         {/* Current Location Marker (optional) */}
         {isValidCoord(currentLocation) && (
           <Marker
@@ -301,7 +325,7 @@ export default function MapViewComponent({
           />
         )}
       </MapView>
-      
+
       {/* Loading overlay for route calculation */}
       {loadingRoute && (
         <View style={styles.routeLoadingOverlay}>
@@ -393,9 +417,9 @@ function decodePolyline(encoded: string): Location[] {
 }
 
 const styles = StyleSheet.create({
-  container: { 
+  container: {
     flex: 1,
-    position: 'relative', // For loading overlay positioning
+    position: "relative", // For loading overlay positioning
   },
   loaderContainer: {
     flex: 1,
@@ -407,17 +431,17 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   routeLoadingOverlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 16,
     left: 16,
     right: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 12,
     borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
@@ -426,7 +450,27 @@ const styles = StyleSheet.create({
   routeLoadingText: {
     marginLeft: 8,
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
   },
+  riderMarker: {
+    backgroundColor: '#007AFF',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  userMarker: {
+    backgroundColor: '#34C759',
+    padding: 6,
+    borderRadius: 15,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+
 });

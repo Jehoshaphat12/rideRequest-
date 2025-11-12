@@ -1,12 +1,13 @@
 import MapViewComponent from "@/components/MapViewComponent";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
-import { db } from "@/lib/firebaseConfig";
+import { db, rtdb } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
 import { cancelRide } from "@/services/rides";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { off, onValue, ref } from "firebase/database";
 import {
   doc,
   onSnapshot,
@@ -28,6 +29,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+interface RiderLocation {
+  latitude: number
+  longitude: number
+  heading?: number
+  timestamp: number
+}
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MINIMIZED_HEIGHT = 120;
 const EXPANDED_HEIGHT = 380;
@@ -43,9 +51,44 @@ export default function RideInProgressScreen() {
   const [updating, setUpdating] = useState(false);
   const [eta, setEta] = useState("Calculating...");
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
+  const [riderLocation, setRiderLocation] = useState<RiderLocation | null>(null)
+  const [riderLocationLoading, setRiderLocationLoading] = useState(true)
   
   const { currentLocation } = useLocationTracking();
   const panelHeight = useRef(new Animated.Value(EXPANDED_HEIGHT)).current;
+
+   // Listen for rider's real-time location
+  useEffect(() => {
+    if (!ride?.riderId) return;
+
+    const riderLocationRef = ref(rtdb, `riderLocations/${ride.riderId}`);
+    
+    const unsubscribe = onValue(riderLocationRef, (snapshot) => {
+      const locationData = snapshot.val();
+      if (locationData) {
+        setRiderLocation({
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          heading: locationData.heading,
+          timestamp: locationData.timestamp
+        });
+      } else {
+        // Fallback to rider's last known location from ride data
+        if (ride.riderLocation) {
+          setRiderLocation(ride.riderLocation);
+        }
+      }
+      setRiderLocationLoading(false);
+    }, (error) => {
+      console.error('Error listening to rider location:', error);
+      setRiderLocationLoading(false);
+    });
+
+    return () => {
+      off(riderLocationRef);
+    };
+  }, [ride?.riderId]);
+  
 
   useEffect(() => {
     if (!rideId) {
@@ -266,6 +309,7 @@ export default function RideInProgressScreen() {
             longitude: ride.dropoff?.lng || 0,
             address: ride.dropoff?.address || "Destination",
           }}
+          riderLocation={riderLocation || undefined}
           // currentLocation={currentLocation!}
           showRoute={ride.status === "accepted" || ride.status === "picked_up"}
         />

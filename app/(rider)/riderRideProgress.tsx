@@ -1,5 +1,6 @@
 import MapViewComponent from "@/components/MapViewComponent";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useRiderLocationBroadcast } from "@/hooks/useRiderLocationBroadcast";
 import { db } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
 import { addNotification } from "@/services/notifications";
@@ -7,10 +8,7 @@ import { completeRide, updateRideStatus } from "@/services/rides";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import {
-  doc,
-  onSnapshot
-} from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -27,9 +25,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MINIMIZED_HEIGHT = 100; // Height when minimized
 const EXPANDED_HEIGHT = 400; // Increased height to accommodate both buttons
 
@@ -43,7 +41,9 @@ export default function RideInProgressScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { theme, darkMode } = useTheme();
-  const rideId = Array.isArray(params.rideId) ? params.rideId[0] : params.rideId;
+  const rideId = Array.isArray(params.rideId)
+    ? params.rideId[0]
+    : params.rideId;
 
   const [ride, setRide] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -51,7 +51,7 @@ export default function RideInProgressScreen() {
   const [currentStatus, setCurrentStatus] = useState("");
   const [eta, setEta] = useState<string>("Calculating...");
   const [isPanelExpanded, setIsPanelExpanded] = useState(true);
-  
+
   // const { currentLocation } = useLocationTracking(30000, "ride");
   //  const { currentLocation, smoothedLocation, error: locationError } = useSmoothLocationTracking(5000);
   const locationUpdateRef = useRef<NodeJS.Timeout | any>("");
@@ -76,9 +76,9 @@ export default function RideInProgressScreen() {
         const dragDistance = gestureState.dy;
         const isSwipingUp = dragDistance < -30;
         const isSwipingDown = dragDistance > 30;
-        
+
         let targetHeight = isPanelExpanded ? EXPANDED_HEIGHT : MINIMIZED_HEIGHT;
-        
+
         if (isSwipingUp && !isPanelExpanded) {
           targetHeight = EXPANDED_HEIGHT;
           setIsPanelExpanded(true);
@@ -104,7 +104,7 @@ export default function RideInProgressScreen() {
   const togglePanel = () => {
     const targetHeight = isPanelExpanded ? MINIMIZED_HEIGHT : EXPANDED_HEIGHT;
     setIsPanelExpanded(!isPanelExpanded);
-    
+
     Animated.spring(panelHeight, {
       toValue: targetHeight,
       useNativeDriver: false,
@@ -155,12 +155,22 @@ export default function RideInProgressScreen() {
           setLoading(false);
           calculateETA(rideData);
 
+          // Broadcast rider's location when ride is accepted
+          useRiderLocationBroadcast(
+            rideId,
+            ride.status === "accepted" || ride.status === "picked_up"
+          );
+
           if (rideData.status === "completed") {
             await addNotification(
               rideData.riderId,
               "ride_completed",
               "Ride Completed ✅",
-              `You earned ${rideData.finalFare ? formatFare(rideData.finalFare) : formatFare(rideData.estimatedFare || 0)}`,
+              `You earned ${
+                rideData.finalFare
+                  ? formatFare(rideData.finalFare)
+                  : formatFare(rideData.estimatedFare || 0)
+              }`,
               rideId
             );
             router.replace({
@@ -271,7 +281,6 @@ export default function RideInProgressScreen() {
   };
 
   const getActionButton = () => {
-    
     switch (currentStatus) {
       case "accepted":
         return (
@@ -280,8 +289,8 @@ export default function RideInProgressScreen() {
               style={[
                 styles.btn,
                 styles.secondaryBtn,
-                { 
-                  backgroundColor: theme.card, 
+                {
+                  backgroundColor: theme.card,
                   borderColor: theme.primary,
                   flex: 1,
                 },
@@ -293,12 +302,12 @@ export default function RideInProgressScreen() {
                 Start Navigation
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
                 styles.btn,
                 styles.primaryBtn,
-                { 
+                {
                   backgroundColor: theme.primary,
                   flex: 1,
                 },
@@ -310,7 +319,11 @@ export default function RideInProgressScreen() {
                 <ActivityIndicator color={theme.primaryText} />
               ) : (
                 <>
-                  <Ionicons name="checkmark-circle" size={20} color={theme.primaryText} />
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={20}
+                    color={theme.primaryText}
+                  />
                   <Text style={[styles.btnText, { color: theme.primaryText }]}>
                     Arrived at Pickup
                   </Text>
@@ -351,8 +364,8 @@ export default function RideInProgressScreen() {
               style={[
                 styles.btn,
                 styles.secondaryBtn,
-                { 
-                  backgroundColor: theme.card, 
+                {
+                  backgroundColor: theme.card,
                   borderColor: theme.primary,
                   flex: 1,
                 },
@@ -364,12 +377,12 @@ export default function RideInProgressScreen() {
                 Navigate to Destination
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
                 styles.btn,
                 styles.successBtn,
-                { 
+                {
                   backgroundColor: theme.success,
                   flex: 1,
                 },
@@ -478,13 +491,13 @@ export default function RideInProgressScreen() {
       )} */}
 
       {/* Collapsible Ride Details Panel */}
-      <Animated.View 
+      <Animated.View
         style={[
           styles.panelContainer,
-          { 
+          {
             backgroundColor: theme.card,
             height: panelHeight,
-          }
+          },
         ]}
         {...panResponder.panHandlers}
       >
@@ -494,20 +507,17 @@ export default function RideInProgressScreen() {
         </View>
 
         {/* Toggle Button */}
-        <TouchableOpacity 
-          style={styles.toggleButton}
-          onPress={togglePanel}
-        >
-          <Ionicons 
-            name={isPanelExpanded ? "chevron-down" : "chevron-up"} 
-            size={24} 
-            color={theme.text} 
+        <TouchableOpacity style={styles.toggleButton} onPress={togglePanel}>
+          <Ionicons
+            name={isPanelExpanded ? "chevron-down" : "chevron-up"}
+            size={24}
+            color={theme.text}
           />
         </TouchableOpacity>
 
         {/* Panel Content - Conditionally render based on expansion state */}
         {isPanelExpanded ? (
-          <ScrollView 
+          <ScrollView
             style={styles.expandedScrollContent}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.expandedContent}
@@ -533,12 +543,20 @@ export default function RideInProgressScreen() {
                   {ride.passengerInfo?.name || "Passenger"}
                 </Text>
                 <Text style={[styles.passengerRating, { color: theme.muted }]}>
-                  ⭐ {ride.passengerInfo?.rating?.toFixed(1) || "4.8"} • {ride.passengerInfo?.totalRides || "0"} rides
+                  ⭐ {ride.passengerInfo?.rating?.toFixed(1) || "4.8"} •{" "}
+                  {ride.passengerInfo?.totalRides || "0"} rides
                 </Text>
               </View>
               {ride.passengerInfo?.phone && (
-                <TouchableOpacity style={styles.callButton} onPress={callPassenger}>
-                  <Ionicons name="call-outline" size={24} color={theme.primary} />
+                <TouchableOpacity
+                  style={styles.callButton}
+                  onPress={callPassenger}
+                >
+                  <Ionicons
+                    name="call-outline"
+                    size={24}
+                    color={theme.primary}
+                  />
                 </TouchableOpacity>
               )}
             </View>
@@ -570,10 +588,19 @@ export default function RideInProgressScreen() {
                 style={styles.row}
                 onPress={() => openMaps(ride.pickup)}
               >
-                <Ionicons name="location-outline" size={20} color={theme.primary} />
+                <Ionicons
+                  name="location-outline"
+                  size={20}
+                  color={theme.primary}
+                />
                 <View style={styles.locationText}>
-                  <Text style={[styles.label, { color: theme.muted }]}>Pickup:</Text>
-                  <Text style={[styles.value, { color: theme.text }]} numberOfLines={2}>
+                  <Text style={[styles.label, { color: theme.muted }]}>
+                    Pickup:
+                  </Text>
+                  <Text
+                    style={[styles.value, { color: theme.text }]}
+                    numberOfLines={2}
+                  >
                     {ride.pickup.address}
                   </Text>
                 </View>
@@ -585,8 +612,13 @@ export default function RideInProgressScreen() {
               >
                 <Ionicons name="flag-outline" size={20} color={theme.primary} />
                 <View style={styles.locationText}>
-                  <Text style={[styles.label, { color: theme.muted }]}>Destination:</Text>
-                  <Text style={[styles.value, { color: theme.text }]} numberOfLines={2}>
+                  <Text style={[styles.label, { color: theme.muted }]}>
+                    Destination:
+                  </Text>
+                  <Text
+                    style={[styles.value, { color: theme.text }]}
+                    numberOfLines={2}
+                  >
                     {ride.dropoff.address}
                   </Text>
                 </View>
@@ -595,10 +627,18 @@ export default function RideInProgressScreen() {
               {/* Fare Information */}
               {(ride.estimatedFare || ride.finalFare) && (
                 <View style={styles.fareRow}>
-                  <Ionicons name="cash-outline" size={20} color={theme.primary} />
-                  <Text style={[styles.label, { color: theme.muted }]}>Fare:</Text>
+                  <Ionicons
+                    name="cash-outline"
+                    size={20}
+                    color={theme.primary}
+                  />
+                  <Text style={[styles.label, { color: theme.muted }]}>
+                    Fare:
+                  </Text>
                   <Text style={[styles.fareValue, { color: theme.success }]}>
-                    {ride.finalFare ? formatFare(ride.finalFare) : formatFare(ride.estimatedFare)}
+                    {ride.finalFare
+                      ? formatFare(ride.finalFare)
+                      : formatFare(ride.estimatedFare)}
                   </Text>
                 </View>
               )}
@@ -606,7 +646,11 @@ export default function RideInProgressScreen() {
               {/* Trip Information */}
               <View style={styles.tripInfoRow}>
                 <View style={styles.tripInfo}>
-                  <Ionicons name="trending-up-outline" size={16} color={theme.muted} />
+                  <Ionicons
+                    name="trending-up-outline"
+                    size={16}
+                    color={theme.muted}
+                  />
                   <Text style={[styles.tripText, { color: theme.text }]}>
                     {ride.estimatedDistance || "Calculating..."}
                   </Text>
@@ -656,7 +700,9 @@ export default function RideInProgressScreen() {
           <View style={styles.minimizedContent}>
             <View style={styles.minimizedRow}>
               <View style={styles.minimizedInfo}>
-                <Text style={[styles.minimizedStatus, { color: theme.primary }]}>
+                <Text
+                  style={[styles.minimizedStatus, { color: theme.primary }]}
+                >
                   {getStatusDisplay(currentStatus)}
                 </Text>
                 <Text style={[styles.minimizedEta, { color: theme.text }]}>
@@ -664,15 +710,22 @@ export default function RideInProgressScreen() {
                 </Text>
               </View>
               <View style={styles.minimizedFare}>
-                <Text style={[styles.minimizedFareText, { color: theme.success }]}>
-                  {ride.finalFare ? formatFare(ride.finalFare) : formatFare(ride.estimatedFare)}
+                <Text
+                  style={[styles.minimizedFareText, { color: theme.success }]}
+                >
+                  {ride.finalFare
+                    ? formatFare(ride.finalFare)
+                    : formatFare(ride.estimatedFare)}
                 </Text>
               </View>
             </View>
             {/* Quick action button in minimized state */}
             {currentStatus === "accepted" && (
               <TouchableOpacity
-                style={[styles.quickActionBtn, { backgroundColor: theme.primary }]}
+                style={[
+                  styles.quickActionBtn,
+                  { backgroundColor: theme.primary },
+                ]}
                 onPress={() => openNavigation(ride.pickup)}
               >
                 <Ionicons name="navigate" size={16} color="#fff" />
@@ -713,11 +766,11 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, // Map takes full screen
   },
   panelContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    maxHeight: '80%', // Increased to accommodate both buttons
+    maxHeight: "80%", // Increased to accommodate both buttons
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     ...Platform.select({
@@ -733,7 +786,7 @@ const styles = StyleSheet.create({
     }),
   },
   dragHandleContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingTop: 8,
   },
   dragHandle: {
@@ -742,7 +795,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   toggleButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     right: 16,
     padding: 4,
@@ -754,50 +807,50 @@ const styles = StyleSheet.create({
     flexGrow: 1, // Important for ScrollView content
     padding: 20,
     paddingTop: 30,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 30,
+    paddingBottom: Platform.OS === "ios" ? 40 : 30,
   },
   minimizedContent: {
     flex: 1,
     padding: 16,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   minimizedRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   minimizedInfo: {
     flex: 1,
   },
   minimizedStatus: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 2,
   },
   minimizedEta: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   minimizedFare: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   minimizedFareText: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   quickActionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     padding: 8,
     borderRadius: 8,
     marginTop: 8,
     gap: 4,
   },
   quickActionText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   loadingContainer: {
     flex: 1,
@@ -922,9 +975,9 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   actionGroup: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
-    width: '100%',
+    width: "100%",
   },
   btn: {
     padding: 16,
@@ -961,13 +1014,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-   errorBanner: {
-    position: 'absolute',
+  errorBanner: {
+    position: "absolute",
     top: 80,
     left: 16,
     right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 8,
     gap: 8,
@@ -975,7 +1028,7 @@ const styles = StyleSheet.create({
   },
   errorBannerText: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     flex: 1,
   },
 });
