@@ -1,6 +1,5 @@
 import MapViewComponent from "@/components/MapViewComponent";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useRiderLocationBroadcast } from "@/hooks/useRiderLocationBroadcast";
 import { db } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
 import { addNotification } from "@/services/notifications";
@@ -56,6 +55,7 @@ export default function RideInProgressScreen() {
   //  const { currentLocation, smoothedLocation, error: locationError } = useSmoothLocationTracking(5000);
   const locationUpdateRef = useRef<NodeJS.Timeout | any>("");
   const panelHeight = useRef(new Animated.Value(EXPANDED_HEIGHT)).current;
+  
 
   // PanResponder for swipe gestures
   const panResponder = useRef(
@@ -138,6 +138,8 @@ export default function RideInProgressScreen() {
   //   };
   // }, [currentLocation, rideId, ride?.riderId]);
 
+  
+
   useEffect(() => {
     if (!rideId) {
       Alert.alert("Error", "Ride ID not provided");
@@ -156,10 +158,7 @@ export default function RideInProgressScreen() {
           calculateETA(rideData);
 
           // Broadcast rider's location when ride is accepted
-          useRiderLocationBroadcast(
-            rideId,
-            ride.status === "accepted" || ride.status === "picked_up"
-          );
+          
 
           if (rideData.status === "completed") {
             await addNotification(
@@ -197,6 +196,8 @@ export default function RideInProgressScreen() {
 
     return () => unsubscribe();
   }, [rideId]);
+
+  
 
   const calculateETA = (rideData: any) => {
     if (rideData.status === "accepted") {

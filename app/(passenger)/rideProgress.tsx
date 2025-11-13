@@ -1,13 +1,12 @@
 import MapViewComponent from "@/components/MapViewComponent";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLocationTracking } from "@/hooks/useLocationTracking";
-import { db, rtdb } from "@/lib/firebaseConfig";
+import { db } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
 import { cancelRide } from "@/services/rides";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { off, onValue, ref } from "firebase/database";
 import {
   doc,
   onSnapshot,
@@ -57,37 +56,6 @@ export default function RideInProgressScreen() {
   const { currentLocation } = useLocationTracking();
   const panelHeight = useRef(new Animated.Value(EXPANDED_HEIGHT)).current;
 
-   // Listen for rider's real-time location
-  useEffect(() => {
-    if (!ride?.riderId) return;
-
-    const riderLocationRef = ref(rtdb, `riderLocations/${ride.riderId}`);
-    
-    const unsubscribe = onValue(riderLocationRef, (snapshot) => {
-      const locationData = snapshot.val();
-      if (locationData) {
-        setRiderLocation({
-          latitude: locationData.latitude,
-          longitude: locationData.longitude,
-          heading: locationData.heading,
-          timestamp: locationData.timestamp
-        });
-      } else {
-        // Fallback to rider's last known location from ride data
-        if (ride.riderLocation) {
-          setRiderLocation(ride.riderLocation);
-        }
-      }
-      setRiderLocationLoading(false);
-    }, (error) => {
-      console.error('Error listening to rider location:', error);
-      setRiderLocationLoading(false);
-    });
-
-    return () => {
-      off(riderLocationRef);
-    };
-  }, [ride?.riderId]);
   
 
   useEffect(() => {

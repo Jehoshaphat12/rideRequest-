@@ -24,20 +24,20 @@ interface RideHistoryItem {
     address: string;
     coordinates: any;
   };
-  passenger: {
+  passengerInfo: {
     name: string;
     phone?: string;
     rating?: number;
   };
   status: string;
-  fare: number;
-  distance: number;
-  duration: number;
-  vehicleType: string;
+  estimatedFare: number;
+  estimatedDistance: string;
+  estimatedDuration: number;
+  // vehicleType: string;
   createdAt: any;
   completedAt?: any;
-  paymentMethod: string;
-  riderEarnings: number;
+  // paymentMethod: string;
+  // riderEarnings: number;
 }
 
 export default function RiderRideHistoryScreen() {
@@ -90,8 +90,8 @@ export default function RiderRideHistoryScreen() {
       
       // Calculate stats
       const completedRides = rideList.filter(r => r.status === 'completed');
-      const totalEarnings = completedRides.reduce((sum, ride) => sum + (ride.riderEarnings || ride.fare), 0);
-      const totalDistance = completedRides.reduce((sum, ride) => sum + (ride.distance || 0), 0);
+      const totalEarnings = completedRides.reduce((sum, ride) => sum + ride.estimatedFare, 0);
+      const totalDistance = completedRides.reduce((sum, ride) => sum + parseFloat(ride.estimatedDistance.replace('km', '')), 0);
       
       setStats({
         total: rideList.length,
@@ -179,23 +179,23 @@ export default function RiderRideHistoryScreen() {
           </Text>
         </View>
         <Text style={[styles.fareText, { color: theme.primary }]}>
-          GHS {(item.riderEarnings || item.fare)?.toFixed(2)}
+          GHS {item.estimatedFare?.toFixed(2)}
         </Text>
       </View>
 
       <View style={styles.passengerInfo}>
-        <View style={styles.vehicleContainer}>
+        {/* <View style={styles.vehicleContainer}>
           <Ionicons 
             name={getVehicleIcon(item.vehicleType) as any} 
             size={14} 
             color={theme.primary} 
           />
           <Text style={[styles.vehicleText, { color: theme.text }]}>
-            {item.vehicleType.toUpperCase()}
+            {item.vehicleType}
           </Text>
-        </View>
+        </View> */}
         <Text style={[styles.passengerText, { color: theme.text }]}>
-          {item.passenger.name}
+          {item.passengerInfo.name}
         </Text>
       </View>
 
@@ -218,21 +218,21 @@ export default function RiderRideHistoryScreen() {
         <View style={styles.metaItem}>
           <Ionicons name="speedometer" size={12} color={theme.muted} />
           <Text style={[styles.metaText, { color: theme.muted }]}>
-            {formatDistance(item.distance)}
+            {item.estimatedDistance}
           </Text>
         </View>
         <View style={styles.metaItem}>
           <Ionicons name="time" size={12} color={theme.muted} />
           <Text style={[styles.metaText, { color: theme.muted }]}>
-            {formatDuration(item.duration)}
+            {item.estimatedDuration}
           </Text>
         </View>
-        <View style={styles.metaItem}>
+        {/* <View style={styles.metaItem}>
           <Ionicons name="card" size={12} color={theme.muted} />
           <Text style={[styles.metaText, { color: theme.muted }]}>
             {item.paymentMethod}
           </Text>
-        </View>
+        </View> */}
       </View>
 
       <Text style={[styles.dateText, { color: theme.muted }]}>
@@ -280,7 +280,7 @@ export default function RiderRideHistoryScreen() {
           <Text style={[styles.statLabel, { color: theme.muted }]}>Earnings</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statNumber, { color: theme.info }]}>{stats.totalDistance.toFixed(1)}km</Text>
+          <Text style={[styles.statNumber, { color: theme.info }]}>{stats.totalDistance.toFixed(2)}km</Text>
           <Text style={[styles.statLabel, { color: theme.muted }]}>Distance</Text>
         </View>
       </View>

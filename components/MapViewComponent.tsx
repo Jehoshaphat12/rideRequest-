@@ -287,22 +287,24 @@ export default function MapViewComponent({
         )}
 
         {/* Rider Location Marker */}
-      {riderLocation && (
-        <Marker
-          coordinate={{
-            latitude: riderLocation.latitude,
-            longitude: riderLocation.longitude,
-          }}
-          title="Your Rider"
-          description="Rider is on the way"
-          anchor={{ x: 0.5, y: 0.5 }}
-          rotation={riderLocation || 0}
-        >
-          <View style={styles.riderMarker}>
-            <Ionicons name="at-circle" size={20} color="#FFFFFF" />
-          </View>
-        </Marker>
-      )}
+        {riderLocation &&
+          typeof riderLocation.latitude === "number" &&
+          typeof riderLocation.longitude === "number" && (
+            <Marker
+              coordinate={{
+                latitude: riderLocation.latitude,
+                longitude: riderLocation.longitude,
+              }}
+              title="Your Rider"
+              description="Rider is on the way"
+              anchor={{ x: 0.5, y: 0.5 }}
+              rotation={riderLocation ?? 0}
+            >
+              <View style={styles.riderMarker}>
+                <Ionicons name="at-circle" size={20} color="#4c00ffff" />
+              </View>
+            </Marker>
+          )}
 
         {/* Current Location Marker (optional) */}
         {isValidCoord(currentLocation) && (
@@ -454,23 +456,22 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   riderMarker: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     padding: 8,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
-    shadowColor: '#000',
+    borderColor: "#FFFFFF",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 5,
   },
   userMarker: {
-    backgroundColor: '#34C759',
+    backgroundColor: "#34C759",
     padding: 6,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: '#FFFFFF',
+    borderColor: "#FFFFFF",
   },
-
 });

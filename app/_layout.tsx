@@ -44,7 +44,7 @@ function RootLayoutContent() {
 
     try {
       if (!user || !role) {
-        router.replace("/");
+        router.replace("/welcomeScreen");
         setRiderId(null);
         return;
       }
@@ -53,11 +53,11 @@ function RootLayoutContent() {
       if (!profile) {
         console.error("No profile found for authenticated user");
         setRiderId(null);
-        router.replace("/");
+        router.replace("/welcomeScreen");
         return;
       }
 
-      let targetRoute = "/";
+      let targetRoute = "/welcomeScreen";
 
       if (profile.role === "rider") {
         // 🆕 Save riderId to enable listener later
@@ -84,7 +84,7 @@ function RootLayoutContent() {
       // Check ticket again right before navigating
       if (ticket === navigationTicketRef.current) {
         setRiderId(null);
-        router.replace("/");
+        router.replace("/welcomeScreen");
       }
     }
   };
@@ -100,7 +100,7 @@ function RootLayoutContent() {
         setInitialAuthCheck(true);
         // Increment the ticket for the timeout navigation
         navigationTicketRef.current++;
-        router.replace("/");
+        router.replace("/welcomeScreen");
       }
     }, 10000);
 
@@ -125,7 +125,7 @@ function RootLayoutContent() {
 
       if (!user) {
         setRiderId(null);
-        router.replace("/");
+        router.replace("/welcomeScreen");
         return;
       }
 

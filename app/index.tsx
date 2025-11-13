@@ -1,6 +1,5 @@
 import { auth } from "@/lib/firebaseConfig";
 import { getUserProfile } from "@/services/users";
-import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { onAuthStateChanged } from "firebase/auth";
 import { useEffect } from "react";
@@ -8,23 +7,14 @@ import { ActivityIndicator, View } from "react-native";
 
 
 
-
 export default function Index() {
   const router = useRouter();
-
-
-  Notifications.setNotificationChannelAsync("default", {
-  name: "Default",
-  importance: Notifications.AndroidImportance.MAX,
-  vibrationPattern: [0, 250, 250, 250],
-  lightColor: "#7500fc",
-});
-
 
   useEffect(() => {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       const profile = await getUserProfile()
+      if(!user) return router.replace('/welcomeScreen')
       if (user) {
         
         // You can later replace this with a role check if needed
@@ -50,7 +40,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <ActivityIndicator size="large" color="#6C63FF" />
+      <ActivityIndicator size="large" color="#7500fc" />
     </View>
   );
 }
