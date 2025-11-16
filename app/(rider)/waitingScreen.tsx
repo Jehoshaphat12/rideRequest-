@@ -50,6 +50,7 @@ export default function WaitingScreen() {
       try {
         await signOut(auth);
         // Navigate the user to the login screen or another appropriate screen
+        router.replace("/welcomeScreen")
         // using your navigation library (e.g., React Navigation)
       } catch (error) {
         console.error("Error signing out:", error);
@@ -63,13 +64,13 @@ export default function WaitingScreen() {
         { backgroundColor: darkMode ? "#000" : "#fff" },
       ]}
     >
-      <View style={{width: 500, height: "auto"}}>
+      <View style={{width: 500, height: "auto", alignItems: "center", justifyContent: "center"}}>
       <LottieView
         source={require('../../splashScreenAnimations/ProfileScanning.json')}
         autoPlay
         resizeMode="contain"
         loop
-        style={[styles.animation, {width: 20, height: 20}]}
+        style={[styles.animation, {width: 350, height: 350}]}
       />
 
       </View>

@@ -71,7 +71,7 @@ export default function PassengerProfileScreen() {
       >
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => router.back()}
+          onPress={() => router.replace('/(passenger)/passengerWelcomeScreen')}
         >
           <Ionicons
             name="arrow-back"

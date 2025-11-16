@@ -46,7 +46,7 @@ export default function AboutAppScreen() {
             </View>
           </View>
           <View style={styles.appInfo}>
-            <Text style={[styles.appName, { color: theme.text }]}>RideExpress</Text>
+            <Text style={[styles.appName, { color: theme.text }]}>RideX</Text>
             <Text style={[styles.appTagline, { color: theme.muted }]}>Your reliable ride-hailing partner</Text>
             <Text style={[styles.version, { color: theme.primary }]}>Version 1.0.0</Text>
           </View>
@@ -54,9 +54,9 @@ export default function AboutAppScreen() {
 
         {/* Description Section */}
         <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
-          <Text style={[styles.sectionTitle, { color: theme.text }]}>About RideExpress</Text>
+          <Text style={[styles.sectionTitle, { color: theme.text }]}>About RideX</Text>
           <Text style={[styles.description, { color: theme.text }]}>
-            RideExpress is a modern, user-friendly ride-hailing application designed to connect passengers 
+            RideX is a modern, user-friendly ride-hailing application designed to connect passengers 
             with reliable drivers in their area. Our mission is to provide safe, affordable, and convenient 
             transportation solutions for everyone.
           </Text>
@@ -139,7 +139,7 @@ export default function AboutAppScreen() {
         <View style={[styles.section, { backgroundColor: theme.card, borderColor: theme.border }]}>
           <Text style={[styles.sectionTitle, { color: theme.text }]}>Company</Text>
           <Text style={[styles.companyInfo, { color: theme.text }]}>
-            RideExpress Technologies Inc.{"\n"}
+            RideX Technologies Inc.{"\n"}
             Building the future of transportation
           </Text>
           
@@ -176,7 +176,7 @@ export default function AboutAppScreen() {
 
         {/* Copyright */}
         <Text style={[styles.copyright, { color: theme.muted }]}>
-          © 2025 RideExpress. All rights reserved.
+          © 2025 RideX. All rights reserved.
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -160,9 +160,9 @@ export default function RiderLogin() {
               style={styles.headerImg}
               resizeMode="contain"
             />
-            <Text style={styles.title}>Sign in</Text>
+            <Text style={styles.title}>Rider Sign in</Text>
             <Text style={styles.subtitle}>
-              Welcome back! Please login to your account.
+              Welcome back! Please login to your Rider Account.
             </Text>
           </View>
 

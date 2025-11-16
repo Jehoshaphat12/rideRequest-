@@ -109,7 +109,7 @@ export default function WelcomeScreen() {
               style={styles.logo}
             />
             <Text style={[styles.headerText, { color: theme.text }]}>
-              RideRequest
+              RideX
             </Text>
           </View>
           <View style={styles.headerRight}>

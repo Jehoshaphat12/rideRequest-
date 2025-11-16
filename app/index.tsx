@@ -14,7 +14,6 @@ export default function Index() {
     
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       const profile = await getUserProfile()
-      if(!user) return router.replace('/welcomeScreen')
       if (user) {
         
         // You can later replace this with a role check if needed
@@ -40,7 +39,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <ActivityIndicator size="large" color="#7500fc" />
+      <ActivityIndicator size="large" color="#6C63FF" />
     </View>
   );
 }

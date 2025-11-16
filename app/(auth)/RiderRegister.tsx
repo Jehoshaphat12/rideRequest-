@@ -1,5 +1,6 @@
+// Component with improvements
 import { AuthError, registerUser } from "@/services/auth";
-import { isValidEmail, isValidPhone } from "@/utils/validation";
+import { isValidEmail, isValidPassword, isValidPhone } from "@/utils/validation";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Link, useRouter } from "expo-router";
 import { useState } from "react";
@@ -24,7 +25,15 @@ type FormData = {
   role: string;
 };
 
-export default function RegisterScreen() {
+type ValidationErrors = {
+  username?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+  confirmPassword?: string;
+};
+
+export default function RiderRegisterScreen() {
   const router = useRouter();
 
   const [form, setForm] = useState<FormData>({
@@ -38,40 +47,55 @@ export default function RegisterScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [prompt, setPrompt] = useState(false);
-  const [promptMsg, setPromptMsg] = useState("")
-  
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+
+  const validateForm = (): boolean => {
+    const errors: ValidationErrors = {};
+
+    // Required field validation
+    if (!form.username.trim()) {
+      errors.username = "Username is required";
+    } else if (form.username.trim().length < 2) {
+      errors.username = "Username must be at least 2 characters";
+    }
+
+    if (!form.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!isValidEmail(form.email)) {
+      errors.email = "Invalid email format";
+    }
+
+    if (!form.phone.trim()) {
+      errors.phone = "Phone number is required";
+    } else if (!isValidPhone(form.phone)) {
+      errors.phone = "Invalid Ghana phone number format";
+    }
+
+    if (!form.password) {
+      errors.password = "Password is required";
+    } else if (!isValidPassword(form.password)) {
+      errors.password = "Password must be at least 6 characters";
+    }
+
+    if (!confirmPassword) {
+      errors.confirmPassword = "Please confirm your password";
+    } else if (form.password !== confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearFieldError = (field: keyof ValidationErrors) => {
+    setValidationErrors(prev => ({
+      ...prev,
+      [field]: undefined
+    }));
+  };
 
   const handleRegister = async () => {
-    if (!form.username || !form.email || !form.password || !form.phone) {
-      setPrompt(true)
-      setPromptMsg("Please fill all field before submitting")
-      return;
-    }
-
-    if (!isValidEmail(form.email)) {
-          setPrompt(true);
-          setPromptMsg("❌ Invalid email format. Please check and try again.");
-          return;
-        }
-
-      if (!isValidPhone(form.phone)) {
-          setPrompt(true);
-          setPromptMsg("❌ Invalid phone number. Please check and try again.");
-          return;
-        }
-
-    if (form.password.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters long");
-      setPrompt(true)
-      setPromptMsg("Password must be at least 6 characters long")
-      return;
-    }
-
-    if (form.password !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      setPrompt(true)
-      setPromptMsg("Passwords do not match. Please try again")
+    if (!validateForm()) {
       return;
     }
 
@@ -79,15 +103,24 @@ export default function RegisterScreen() {
       setLoading(true);
 
       await registerUser(
-        form.email,
+        form.email.trim(),
         form.password,
-        form.username,
-        form.phone,
+        form.username.trim(),
+        form.phone.trim().replace(/\s/g, ''),
         "rider"
       );
 
-      // Success - the auth listener in _layout.tsx will handle navigation
-      // No need to show alert or navigate manually
+      // Clear form on success
+      setForm({
+        username: "",
+        email: "",
+        password: "",
+        phone: "",
+        role: "rider",
+      });
+      setConfirmPassword("");
+      
+      // Success - auth listener will handle navigation
     } catch (error: any) {
       const authError = error as AuthError;
 
@@ -97,7 +130,7 @@ export default function RegisterScreen() {
           Alert.alert("Email Already Registered", authError.message, [
             {
               text: "Sign In",
-              onPress: () => router.push("/Login"),
+              onPress: () => router.push("/(auth)/RiderLogin"),
               style: "default",
             },
             {
@@ -143,60 +176,99 @@ export default function RegisterScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.title}>Sign Up</Text>
+            <Text style={styles.title}>Rider Sign Up</Text>
             <Text style={styles.subtitle}>
-              Welcome! Please fill the form to register an account.
+              Welcome! Sign up, become a Rider & start earning on your own.
             </Text>
           </View>
 
           {/* Register form */}
           <View style={styles.form}>
+            {/* Username Input */}
             <View style={styles.input}>
               <Text style={styles.inputLabel}>Username</Text>
               <TextInput
                 autoCorrect={false}
                 autoCapitalize="words"
-                style={styles.inputControl}
+                style={[
+                  styles.inputControl,
+                  validationErrors.username && styles.inputError
+                ]}
                 value={form.username}
                 placeholder="John Doe"
                 placeholderTextColor={"#999"}
-                onChangeText={(username) => setForm({ ...form, username })}
+                onChangeText={(username) => {
+                  setForm({ ...form, username });
+                  clearFieldError('username');
+                }}
+                editable={!loading}
               />
+              {validationErrors.username && (
+                <Text style={styles.errorText}>{validationErrors.username}</Text>
+              )}
             </View>
 
+            {/* Email Input */}
             <View style={styles.input}>
               <Text style={styles.inputLabel}>Email Address</Text>
               <TextInput
                 autoCorrect={false}
                 autoCapitalize="none"
-                style={styles.inputControl}
+                style={[
+                  styles.inputControl,
+                  validationErrors.email && styles.inputError
+                ]}
                 value={form.email}
                 keyboardType="email-address"
                 placeholder="john@gmail.com"
                 placeholderTextColor={"#999"}
-                onChangeText={(email) => setForm({ ...form, email })}
+                onChangeText={(email) => {
+                  setForm({ ...form, email });
+                  clearFieldError('email');
+                }}
+                editable={!loading}
+                autoComplete="email"
               />
+              {validationErrors.email && (
+                <Text style={styles.errorText}>{validationErrors.email}</Text>
+              )}
             </View>
 
-            {/* Phone */}
+            {/* Phone Input */}
             <View style={styles.input}>
               <Text style={styles.inputLabel}>Contact Number</Text>
               <TextInput
-                style={styles.inputControl}
+                style={[
+                  styles.inputControl,
+                  validationErrors.phone && styles.inputError
+                ]}
                 value={form.phone}
                 keyboardType="phone-pad"
                 placeholder="050 123 4567"
                 placeholderTextColor="#999"
-                onChangeText={(phone) => setForm({ ...form, phone })}
+                onChangeText={(phone) => {
+                  setForm({ ...form, phone });
+                  clearFieldError('phone');
+                }}
+                editable={!loading}
+                autoComplete="tel"
               />
+              {validationErrors.phone && (
+                <Text style={styles.errorText}>{validationErrors.phone}</Text>
+              )}
             </View>
 
+            {/* Password Input */}
             <View style={styles.input}>
               <Text style={styles.inputLabel}>Password</Text>
-              <View style={styles.passwordContainer}>
+              <View style={[
+                styles.passwordContainer,
+                validationErrors.password && styles.inputError
+              ]}>
                 <TextInput
                   secureTextEntry={!showPassword}
                   autoCorrect={false}
@@ -205,11 +277,17 @@ export default function RegisterScreen() {
                   value={form.password}
                   placeholder="*********"
                   placeholderTextColor={"#999"}
-                  onChangeText={(password) => setForm({ ...form, password })}
+                  onChangeText={(password) => {
+                    setForm({ ...form, password });
+                    clearFieldError('password');
+                  }}
+                  editable={!loading}
+                  autoComplete="new-password"
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                 >
                   <Ionicons
                     name={showPassword ? "eye-off" : "eye"}
@@ -218,14 +296,22 @@ export default function RegisterScreen() {
                   />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.passwordHint}>
-                Must be at least 6 characters
-              </Text>
+              {validationErrors.password ? (
+                <Text style={styles.errorText}>{validationErrors.password}</Text>
+              ) : (
+                <Text style={styles.passwordHint}>
+                  Must be at least 6 characters
+                </Text>
+              )}
             </View>
 
+            {/* Confirm Password Input */}
             <View style={styles.input}>
               <Text style={styles.inputLabel}>Confirm Password</Text>
-              <View style={styles.passwordContainer}>
+              <View style={[
+                styles.passwordContainer,
+                validationErrors.confirmPassword && styles.inputError
+              ]}>
                 <TextInput
                   secureTextEntry={!showConfirmPassword}
                   autoCorrect={false}
@@ -234,11 +320,17 @@ export default function RegisterScreen() {
                   value={confirmPassword}
                   placeholder="*********"
                   placeholderTextColor={"#999"}
-                  onChangeText={(text) => setConfirmPassword(text)}
+                  onChangeText={(text) => {
+                    setConfirmPassword(text);
+                    clearFieldError('confirmPassword');
+                  }}
+                  editable={!loading}
+                  autoComplete="new-password"
                 />
                 <TouchableOpacity
                   style={styles.eyeIcon}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={loading}
                 >
                   <Ionicons
                     name={showConfirmPassword ? "eye-off" : "eye"}
@@ -247,25 +339,18 @@ export default function RegisterScreen() {
                   />
                 </TouchableOpacity>
               </View>
+              {validationErrors.confirmPassword && (
+                <Text style={styles.errorText}>{validationErrors.confirmPassword}</Text>
+              )}
             </View>
-            {prompt && (
-              <View
-                style={{
-                  backgroundColor: "#fff3caff",
-                  paddingHorizontal: 10,
-                  paddingVertical: 2,
-                  marginBottom: 10,
-                }}
-              >
-                <Text style={{ color: "#ff3d02ff", fontSize: 12 }}>{promptMsg}</Text>
-              </View>
-            )}
 
             <View style={styles.formAction}>
               <TouchableOpacity
                 onPress={handleRegister}
                 style={[styles.btn, loading && styles.btnDisabled]}
                 disabled={loading}
+                accessibilityLabel="Create rider account"
+                accessibilityRole="button"
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
@@ -334,7 +419,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   input: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   inputLabel: {
     fontSize: 16,
@@ -357,6 +442,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingRight: 12,
     color: "#333",
+  },
+  inputError: {
+    borderColor: "#ff3d02",
+    borderWidth: 1,
+  },
+  errorText: {
+    color: "#ff3d02",
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   eyeIcon: {
     padding: 8,

@@ -7,6 +7,7 @@ import { useLocationTracking } from "@/hooks/useLocationTracking";
 import { auth, db } from "@/lib/firebaseConfig";
 import { formatFare } from "@/services/fareService";
 import { addNotification } from "@/services/notifications";
+import { notifyNewRideRequest } from "@/services/NotificationService";
 import { acceptRide, updateRiderLocation } from "@/services/rides";
 import { sendPushNotification } from "@/services/sendPushNotification";
 import { getUserProfile } from "@/services/users";
@@ -256,6 +257,7 @@ export default function RiderHomeScreen() {
         .slice(0, 1);
 
       setFilteredRequests(latestRequestOnly);
+      notifyNewRideRequest()
       setCurrentIndex(0);
     } else {
       setFilteredRequests([]);
@@ -353,6 +355,7 @@ export default function RiderHomeScreen() {
             const otherRequests = prev.filter((req) => req.type !== "ride");
             return [...otherRequests, ...rideRequests];
           });
+          
         },
         (error) => {
           console.error("Error listening to ride requests:", error);
@@ -458,6 +461,7 @@ export default function RiderHomeScreen() {
     };
 
     notifyRiderOfRequests();
+    
   }, [filteredRequests, status]);
 
   // Enhanced accept service function
@@ -1112,8 +1116,8 @@ export default function RiderHomeScreen() {
         )}
       </View>
       {/* NEW: Status Panel from first code */}
-      <View style={[styles.statusPanel, { backgroundColor: theme.card }]}>
-        <ServiceToggle />
+      <View style={[styles.statusPanel, { backgroundColor: theme.card, left: status === 'online' ? 16 : 'auto' }]}>
+        {status === 'online' && <ServiceToggle />}
 
         <TouchableOpacity
           style={[
@@ -1271,7 +1275,7 @@ const styles = StyleSheet.create({
   statusPanel: {
     position: "absolute",
     top: Platform.OS === "ios" ? 120 : 100,
-    left: 16,
+    // left: 16,
     right: 16,
     padding: 16,
     borderRadius: 16,

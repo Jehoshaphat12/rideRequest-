@@ -24,7 +24,7 @@ export async function sendPushNotification(
     });
 
     const result = await response.json();
-    console.log("Expo push response:", result);
+    // console.log("Expo push response:", result);
     return result;
   } catch (error) {
     console.error("Error sending push notification:", error);

@@ -2,7 +2,7 @@ import { auth, db } from "@/lib/firebaseConfig";
 import { doc, setDoc } from "@firebase/firestore";
 import * as Device from "expo-device";
 import * as Notifications from "expo-notifications";
-import fetch from "node-fetch";
+// import fetch from "node-fetch";
 import { Platform } from "react-native";
 import Toast from "react-native-toast-message";
 import { addNotification } from "./notifications";
@@ -129,6 +129,8 @@ export async function notifyNewRideRequest() {
     },
     trigger: null,
   });
+
+  // showNotification("New Ride Request", "A passenger is looking for a ride near you!");
 await addNotification(
         auth.currentUser!.uid,
         "ride_accepted",

@@ -254,7 +254,7 @@ export default function RideInProgressScreen() {
       <View style={[styles.header, { backgroundColor: theme.card }]}>
         <TouchableOpacity
           style={[styles.backButton, {backgroundColor: theme.background}]}
-          onPress={() => router.back()}
+          onPress={() => router.replace('/(passenger)/passengerWelcomeScreen')}
         >
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>

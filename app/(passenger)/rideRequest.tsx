@@ -8,10 +8,9 @@ import { formatFare } from "@/services/fareService";
 import { getRouteWithFare } from "@/services/mapService";
 import { addNotification } from "@/services/notifications";
 import {
-  notifyRideRequested,
-  registerNotificationPermissions,
+  registerNotificationPermissions
 } from "@/services/NotificationService";
-import { requestRide } from "@/services/rides";
+import { notifyNearbyRiders, requestRide } from "@/services/rides";
 import { getUserProfile } from "@/services/users";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
@@ -144,9 +143,19 @@ export default function PassengerHomeScreen() {
       };
 
       const rideId = await requestRide(rideData);
+
+      if(pickup.lat && pickup.lng) {
+            await notifyNearbyRiders(pickup.lat, pickup.lng, rideId).then(result => {
+              console.log("notifyNearbyRiders result: ", result);
+              
+            }).catch (error => {
+              console.error("Error notifying nearby riders: ", error);
+              
+            })
+          }
       setPickup(null);
       setDestination(null);
-      notifyRideRequested();
+      
       await addNotification(
         passengerId,
         "ride_requested",
@@ -198,7 +207,7 @@ export default function PassengerHomeScreen() {
         <View style={[styles.header, { backgroundColor: theme.card }]}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={() => router.replace('/(passenger)/passengerWelcomeScreen')}
           >
             <Ionicons name="arrow-back" size={24} color={theme.text} />
           </TouchableOpacity>

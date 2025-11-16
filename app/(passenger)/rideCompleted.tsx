@@ -375,7 +375,7 @@ export default function RideCompletedScreen() {
             />
             <View style={styles.driverDetails}>
               <Text style={[styles.driverName, { color: theme.text }]}>
-                {riderData?.name || "Driver"}
+                {riderData?.name || riderData?.userName || "Driver"}
               </Text>
               <Text style={[styles.driverRating, { color: theme.muted }]}>
                 ⭐ {riderData?.rating?.toFixed(1) || "4.8"} ({riderData?.totalRides || "0"} rides)
@@ -494,7 +494,7 @@ export default function RideCompletedScreen() {
         <View style={styles.actionButtons}>
           <TouchableOpacity
             style={[styles.primaryButton, { backgroundColor: theme.primary }]}
-            onPress={() => router.replace("/(passenger)/rideRequest")}
+            onPress={() => router.replace("/(passenger)/passengerWelcomeScreen")}
           >
             <Ionicons name="home-outline" size={20} color="#fff" />
             <Text style={styles.primaryButtonText}>Back to Home</Text>

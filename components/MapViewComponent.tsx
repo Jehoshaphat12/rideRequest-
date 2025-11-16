@@ -253,8 +253,8 @@ export default function MapViewComponent({
         initialRegion={{
           latitude: initialRegion?.latitude,
           longitude: initialRegion?.longitude,
-          latitudeDelta: 0.05,
-          longitudeDelta: 0.05,
+          latitudeDelta: 0.15,
+          longitudeDelta: 0.15,
         }}
         showsUserLocation
         showsMyLocationButton
@@ -352,7 +352,7 @@ async function getRouteFromGoogle(
     const originStr = `${origin.latitude},${origin.longitude}`;
     const destinationStr = `${destination.latitude},${destination.longitude}`;
 
-    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&key=${GOOGLE_MAPS_API_KEY}`;
+    const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${originStr}&destination=${destinationStr}&mode=walking&key=${GOOGLE_MAPS_API_KEY}`;
 
     const response = await fetch(url);
     const data = await response.json();

@@ -1,7 +1,10 @@
 // firebaseConfig.ts
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { initializeApp } from "firebase/app";
-import { getReactNativePersistence, initializeAuth } from "firebase/auth";
+// import { getReactNativePersistence, initializeAuth } from "firebase/auth";
+import { initializeAuth } from "firebase/auth";
+// @ts-ignore: module 'firebase/auth' has no bundled type declarations in this project
+import { getReactNativePersistence } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getFirestore } from "firebase/firestore";
 

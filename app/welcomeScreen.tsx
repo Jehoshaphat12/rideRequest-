@@ -27,9 +27,7 @@ export default function LoginScreen() {
           router.replace("/(rider)/riderHome")
         } else if (profile && profile.role === "passenger") {
           router.replace("/(passenger)/passengerWelcomeScreen")
-        } else {
-          router.replace("/welcomeScreen")
-        }
+        } 
       } catch (error) {
         console.error("Error", error)
       }
@@ -38,7 +36,7 @@ export default function LoginScreen() {
 
     checkProfileAndNavigate()
 
-  }, [])
+  }, [router])
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: "#b475fcff" }]}>
@@ -65,10 +63,10 @@ export default function LoginScreen() {
           }
         ]}>
           <Text style={[styles.title, { color: theme.text }]}>
-            Welcome to RideRequest
+            Welcome to RideX
           </Text>
           <Text style={[styles.paragraph, { color: theme.muted }]}>
-            RideRequest connects reliable riders with passengers who need safe, affordable transportation. Become part of our growing network and make every ride count.
+            RideX connects reliable riders with passengers who need safe, affordable transportation. Become part of our growing network and make every ride count.
           </Text>
           
           <TouchableOpacity 

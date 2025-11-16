@@ -48,8 +48,8 @@ export interface DeliveryFareRate extends FareRate {
 // Default fare rates (in GHS)
 const DEFAULT_FARE_RATES: FareRate = {
   baseFare: 1.00,
-  perKm: 4.00,
-  perMinute: 0.04,
+  perKm: 3.00,
+  perMinute: 0.03,
   minimumFare: 5,
   currency: 'GHS'
 };
@@ -57,8 +57,8 @@ const DEFAULT_FARE_RATES: FareRate = {
 // Delivery-specific fare rates
 const DELIVERY_FARE_RATES: DeliveryFareRate = {
   baseFare: 5.00, // Higher base fare for deliveries
-  perKm: 5.50,    // Lower per km but with size multipliers
-  perMinute: 0.15,
+  perKm: 3.50,    // Lower per km but with size multipliers
+  perMinute: 0.05,
   minimumFare: 7,
   currency: 'GHS',
   sizeMultipliers: {
@@ -66,8 +66,8 @@ const DELIVERY_FARE_RATES: DeliveryFareRate = {
     medium: 1.3,
     large: 1.7
   },
-  urgencyFee: 6.00,
-  fragileFee: 4.00
+  urgencyFee: 5.00,
+  fragileFee: 3.00
 };
 
 export function calculateFare(

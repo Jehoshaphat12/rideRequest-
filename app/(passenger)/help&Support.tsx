@@ -89,7 +89,7 @@ export default function CustomerHelpSupportScreen() {
         },
         {
           question: "Can I split the fare with friends?",
-          answer: "Yes! Use the 'Split Fare' feature to divide the cost with other passengers who have RideRequest accounts."
+          answer: "Yes! Use the 'Split Fare' feature to divide the cost with other passengers who have RideX accounts."
         },
         {
           question: "How do I get a receipt?",
@@ -474,7 +474,7 @@ export default function CustomerHelpSupportScreen() {
 
         {/* App Info */}
         <Text style={[styles.versionText, { color: theme.muted }]}>
-          RideRequest Customer Support • V1.0.0
+          RideX Customer Support • V1.0.0
         </Text>
       </ScrollView>
     </SafeAreaView>

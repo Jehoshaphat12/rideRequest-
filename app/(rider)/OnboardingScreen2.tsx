@@ -38,7 +38,7 @@ export default function RiderOnboardingScreen() {
   try {
     // Convert URI → Blob (works with expo-image-picker)
     const response = await fetch(uri);
-    const blob = await response.blob();
+    const imageData = await response.arrayBuffer();
 
     // Generate filename
     const fileExt = uri.split(".").pop()?.split("?")[0] || "jpg";
@@ -52,8 +52,8 @@ export default function RiderOnboardingScreen() {
     // Upload blob to Supabase Storage
     const { error } = await supabase.storage
       .from("Ride Request User profiles") // ✅ bucket name with no spaces
-      .upload(filePath, blob, {
-        contentType: blob.type,
+      .upload(filePath, imageData, {
+        contentType: `image/${fileExt}`,
         upsert: true,
       });
 
