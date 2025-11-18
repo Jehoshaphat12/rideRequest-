@@ -49,7 +49,7 @@ export interface DeliveryFareRate extends FareRate {
 const DEFAULT_FARE_RATES: FareRate = {
   baseFare: 1.00,
   perKm: 3.00,
-  perMinute: 0.03,
+  perMinute: 0.02,
   minimumFare: 5,
   currency: 'GHS'
 };
@@ -87,7 +87,7 @@ export function calculateFare(
   if(distanceKm > thresholdKm) {
     // Reduce the perKm rate gradually, but not below 60% of the base rate
     const excessKm = distanceKm - thresholdKm
-    const reductionFactor = Math.min(0.4, excessKm * 0.3) // 2% less per km per extra km
+    const reductionFactor = Math.min(0.4, excessKm * 0.07) // 2% less per km per extra km
     effectivePerKm = fareRates.perKm * (1 - reductionFactor)
   }
 

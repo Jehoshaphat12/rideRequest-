@@ -92,7 +92,7 @@ export default function WaitForRide() {
               "ride_accepted",
               "Your ride request has been accepted!",
               "Rider is on the way.",
-              rideId
+              rideId,
             );
 
             // Send push notification
@@ -454,7 +454,7 @@ export default function WaitForRide() {
                   />
                   <View style={styles.driverInfo}>
                     <Text style={[styles.driverName, { color: theme.text }]}>
-                      {ride.riderInfo?.name || rider?.name || "Driver"}
+                      {ride.riderInfo?.userName || "Rider"}
                     </Text>
                     <Text style={[styles.driverRating, { color: theme.muted }]}>
                       ⭐ {rider?.rating?.toFixed(1) || "4.8"} (

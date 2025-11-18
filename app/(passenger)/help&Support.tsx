@@ -24,19 +24,19 @@ export default function CustomerHelpSupportScreen() {
   };
 
   const handleContactSupport = () => {
-    Linking.openURL("tel:+1234567890").catch(() => {
+    Linking.openURL("tel:+233257926706").catch(() => {
       Alert.alert("Error", "Could not open phone app");
     });
   };
 
   const handleEmailSupport = () => {
-    Linking.openURL("mailto:support@riderequest.com").catch(() => {
+    Linking.openURL("mailto:support@ridex.com").catch(() => {
       Alert.alert("Error", "Could not open email app");
     });
   };
 
   const handleVisitWebsite = () => {
-    Linking.openURL("https://riderequest.com/help").catch(() => {
+    Linking.openURL("https://ridex.com/help").catch(() => {
       Alert.alert("Error", "Could not open website");
     });
   };

@@ -130,7 +130,7 @@ export default function WelcomeScreen() {
               <Image
                 source={
                   profilePic
-                    ? { uri: profilePic }
+                    ? { uri: profilePic, cache: 'reload' }
                     : require("../../assets/images/defaultUserImg.png")
                 }
                 style={styles.profilePic}

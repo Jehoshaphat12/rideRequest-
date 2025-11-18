@@ -3,14 +3,14 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import {
-    Alert,
-    Linking,
-    ScrollView,
-    StatusBar,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Linking,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -24,7 +24,7 @@ export default function HelpSupportScreen() {
   };
 
   const handleContactSupport = () => {
-    Linking.openURL("tel:+1234567890").catch(() => {
+    Linking.openURL("tel:+233257926706").catch(() => {
       Alert.alert("Error", "Could not open phone app");
     });
   };
@@ -225,7 +225,7 @@ export default function HelpSupportScreen() {
               >
                 <View style={styles.contactLeft}>
                   <Ionicons
-                    name={method.icon}
+                    name={method.icon as any}
                     size={24}
                     color={method.color}
                   />
@@ -269,7 +269,7 @@ export default function HelpSupportScreen() {
                 >
                   <View style={styles.faqHeaderLeft}>
                     <Ionicons
-                      name={section.icon}
+                      name={section.icon as any}
                       size={20}
                       color={theme.primary}
                     />

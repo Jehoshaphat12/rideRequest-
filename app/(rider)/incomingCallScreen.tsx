@@ -452,7 +452,7 @@ export default function IncomingCallScreen() {
           {request.estimatedFare && (
             <View style={styles.fareContainer}>
               <Text style={styles.fareText}>
-                ${request.estimatedFare.toFixed(2)}
+                GHC {request.estimatedFare.toFixed(2)}
               </Text>
               <Text style={styles.fareLabel}>Estimated Fare</Text>
             </View>

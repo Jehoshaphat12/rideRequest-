@@ -375,7 +375,7 @@ export default function RideCompletedScreen() {
             />
             <View style={styles.driverDetails}>
               <Text style={[styles.driverName, { color: theme.text }]}>
-                {riderData?.name || riderData?.userName || "Driver"}
+                {riderData?.name || rider?.userName || "Driver"}
               </Text>
               <Text style={[styles.driverRating, { color: theme.muted }]}>
                 ⭐ {riderData?.rating?.toFixed(1) || "4.8"} ({riderData?.totalRides || "0"} rides)

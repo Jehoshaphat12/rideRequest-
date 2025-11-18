@@ -187,7 +187,7 @@ export default function PassengerHomeScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={[styles.iconWrapper, { backgroundColor: theme.card }]} onPress={() => router.push("/(passenger)/passengerSettings")}>
-              <Image source={profilePic ? { uri: profilePic } : require("../../assets/images/defaultUserImg.png")} style={styles.profilePic} contentFit="cover" />
+              <Image source={profilePic ? { uri: profilePic, cache: 'reload' } : require("../../assets/images/defaultUserImg.png")} style={styles.profilePic} contentFit="cover" />
             </TouchableOpacity>
           </View>
         </View>

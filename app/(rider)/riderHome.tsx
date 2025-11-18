@@ -1093,7 +1093,7 @@ export default function RiderHomeScreen() {
             <Image
               source={
                 profilePic
-                  ? { uri: profilePic }
+                  ? { uri: profilePic, cache: 'reload' }
                   : require("../../assets/images/defaultUserImg2.png")
               }
               style={styles.profilePic}
